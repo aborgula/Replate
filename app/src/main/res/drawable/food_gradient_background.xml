@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Tło podstawowe: jasny krem -->
+    <item>
+        <shape android:layout_height="wrap_content">
+            <solid android:color="#FFF8E7" />
+        </shape>
+    </item>
+
+    <!-- Lawendowy fiolet -->
+    <item>
+        <shape>
+            <gradient
+                android:type="radial"
+                android:gradientRadius="100%"
+                android:startColor="#E8D9FF"
+                android:centerX="0.1"
+                android:centerY="0.1"
+                android:endColor="@android:color/transparent" />
+        </shape>
+    </item>
+
+    <!-- Jasna brzoskwinia -->
+    <item>
+        <shape>
+            <gradient
+                android:type="radial"
+                android:gradientRadius="70%"
+                android:startColor="#FFD7BA"
+                android:centerX="0.8"
+                android:centerY="0.5"
+                android:endColor="@android:color/transparent" />
+        </shape>
+    </item>
+
+    <!-- Miętowa limonka -->
+    <item>
+        <shape>
+            <gradient
+                android:type="radial"
+                android:gradientRadius="40%"
+                android:startColor="#CFFFE5"
+                android:centerX="0.8"
+                android:centerY="0.1"
+                android:endColor="@android:color/transparent" />
+        </shape>
+    </item>
+
+    <!-- Błękit dla świeżości -->
+    <item>
+        <shape>
+            <gradient
+                android:type="radial"
+                android:gradientRadius="70%"
+                android:startColor="#D7F0FF"
+                android:centerX="0.2"
+                android:centerY="0.8"
+                android:endColor="@android:color/transparent" />
+        </shape>
+    </item>
+
+</layer-list>
