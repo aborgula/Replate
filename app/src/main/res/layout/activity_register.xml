@@ -39,7 +39,7 @@
             android:layout_marginTop="8dp"
             android:layout_marginBottom="20dp"
             android:text="Create a new account"
-            android:textColor="#FDA4A4"
+            android:textColor="#FFFFFF"
             android:textSize="16sp" />
 
         <LinearLayout
