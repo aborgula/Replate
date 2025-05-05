@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#ffffff"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".PickupFragment"
+    >
+<LinearLayout
+    android:layout_marginTop="6dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <ImageView
+        android:layout_gravity="center_vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_navigation"/>
+    <LinearLayout
+        android:layout_weight="1"
+        android:layout_marginStart="20sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Katedralna 9, Tarnów"
+            android:textStyle="bold"
+            android:textSize="15dp"
+            android:textColor="@color/black"
+            />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Within 2 km"/>
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/filters"
+        android:gravity="center"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/shape_rounded_square">
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_filters"/></LinearLayout>
+</LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginVertical="17dp">
+        <TextView
+            android:id="@+id/list"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="List"
+            android:textSize="16dp"
+            android:backgroundTint="@color/yellow"
+            android:textColor="@color/black"
+            android:background="@drawable/shape_list_left"
+            android:textStyle="bold"
+            android:gravity="center"/>
+
+        <TextView
+            android:id="@+id/map"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/shape_list_right"
+            android:backgroundTint="@color/lightgrey"
+            android:gravity="center"
+            android:text="Map"
+            android:textColor="@color/yellow"
+            android:textSize="16dp"
+            android:textStyle="bold" />
+    </LinearLayout>
+    
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+>
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:singleSelection="false"
+            app:chipSpacing="8dp">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/sweets"
+                android:layout_width="wrap_content"
+                android:layout_height="58dp"
+                android:text="Sweets"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:checkable="true"
+                app:chipIcon="@drawable/ic_sweets"
+                app:chipIconVisible="true"
+                app:checkedIconVisible="false"
+                app:chipBackgroundColor="@color/chip_background"
+                app:chipStrokeColor="@color/gold"
+                app:chipStrokeWidth="1dp"
+                app:rippleColor="@color/gold"
+                app:iconStartPadding="12dp"
+                app:iconEndPadding="1dp"
+                app:chipStartPadding="0dp"
+                app:chipEndPadding="4dp"
+                app:chipIconSize="22dp" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/fastfood"
+                android:layout_width="wrap_content"
+                android:layout_height="58dp"
+                android:text="Fast food"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:checkable="true"
+                app:chipIcon="@drawable/ic_fastfoods"
+                app:chipIconVisible="true"
+                app:checkedIconVisible="false"
+                app:chipBackgroundColor="@color/chip_background"
+                app:chipStrokeColor="@color/gold"
+                app:chipStrokeWidth="1dp"
+                app:rippleColor="@color/gold"
+                app:iconStartPadding="12dp"
+                app:iconEndPadding="1dp"
+                app:chipStartPadding="0dp"
+                app:chipEndPadding="4dp"
+                app:chipIconSize="22dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/bakery"
+                style="@style/BoldTextChip"
+                android:layout_width="wrap_content"
+                android:layout_height="58dp"
+                android:text="Bakery"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:checkable="true"
+                app:chipIcon="@drawable/ic_bakery"
+                app:chipIconVisible="true"
+                app:checkedIconVisible="false"
+                app:chipBackgroundColor="@color/chip_background"
+                app:chipStrokeColor="@color/gold"
+                app:chipStrokeWidth="1dp"
+                app:rippleColor="@color/gold"
+                app:iconStartPadding="12dp"
+                app:iconEndPadding="1dp"
+                app:chipStartPadding="0dp"
+                app:chipEndPadding="4dp"
+                app:chipIconSize="22dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/dairy"
+                style="@style/BoldTextChip"
+                android:layout_width="wrap_content"
+                android:layout_height="58dp"
+                android:text="Dairy"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:checkable="true"
+                app:chipIcon="@drawable/ic_dairy"
+                app:chipIconVisible="true"
+                app:checkedIconVisible="false"
+                app:chipBackgroundColor="@color/chip_background"
+                app:chipStrokeColor="@color/gold"
+                app:chipStrokeWidth="1dp"
+                app:rippleColor="@color/gold"
+                app:iconStartPadding="12dp"
+                app:iconEndPadding="1dp"
+                app:chipStartPadding="0dp"
+                app:chipEndPadding="4dp"
+                app:chipIconSize="19dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/vegetarian"
+                style="@style/BoldTextChip"
+                android:layout_width="wrap_content"
+                android:layout_height="58dp"
+                android:text="Vegetarian"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:checkable="true"
+                app:chipIcon="@drawable/ic_fish"
+                app:chipIconVisible="true"
+                app:checkedIconVisible="false"
+                app:chipBackgroundColor="@color/chip_background"
+                app:chipStrokeColor="@color/gold"
+                app:chipStrokeWidth="1dp"
+                app:rippleColor="@color/gold"
+                app:iconStartPadding="12dp"
+                app:iconEndPadding="-2dp"
+                app:chipStartPadding="0dp"
+                app:chipEndPadding="4dp"
+                app:chipIconSize="22dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/fruits"
+                style="@style/BoldTextChip"
+                android:layout_width="wrap_content"
+                android:layout_height="58dp"
+                android:text="Fruits"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:checkable="true"
+                app:chipIcon="@drawable/ic_fruits"
+                app:chipIconVisible="true"
+                app:checkedIconVisible="false"
+                app:chipBackgroundColor="@color/chip_background"
+                app:chipStrokeColor="@color/gold"
+                app:chipStrokeWidth="1dp"
+                app:rippleColor="@color/gold"
+                app:iconStartPadding="12dp"
+                app:iconEndPadding="1dp"
+                app:chipStartPadding="0dp"
+                app:chipEndPadding="4dp"
+                app:chipIconSize="22dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/liquids"
+                style="@style/BoldTextChip"
+                android:layout_width="wrap_content"
+                android:layout_height="58dp"
+                android:text="Liquids"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:checkable="true"
+                app:chipIcon="@drawable/ic_liquids"
+                app:chipIconVisible="true"
+                app:checkedIconVisible="false"
+                app:chipBackgroundColor="@color/chip_background"
+                app:chipStrokeColor="@color/gold"
+                app:chipStrokeWidth="1dp"
+                app:rippleColor="@color/gold"
+                app:iconStartPadding="12dp"
+                app:iconEndPadding="-4dp"
+                app:chipStartPadding="0dp"
+                app:chipEndPadding="4dp"
+                app:chipIconSize="22dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/meals"
+                style="@style/BoldTextChip"
+                android:layout_width="wrap_content"
+                android:layout_height="58dp"
+                android:text="Meals"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:checkable="true"
+                app:chipIcon="@drawable/ic_meals"
+                app:chipIconVisible="true"
+                app:checkedIconVisible="false"
+                app:chipBackgroundColor="@color/chip_background"
+                app:chipStrokeColor="@color/gold"
+                app:chipStrokeWidth="1dp"
+                app:rippleColor="@color/gold"
+                app:iconStartPadding="12dp"
+                app:iconEndPadding="1dp"
+                app:chipStartPadding="0dp"
+                app:chipEndPadding="4dp"
+                app:chipIconSize="22dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/meat"
+                style="@style/BoldTextChip"
+                android:layout_width="wrap_content"
+                android:layout_height="58dp"
+                android:text="Meat"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:checkable="true"
+                app:chipIcon="@drawable/ic_meat"
+                app:chipIconVisible="true"
+                app:checkedIconVisible="false"
+                app:chipBackgroundColor="@color/chip_background"
+                app:chipStrokeColor="@color/gold"
+                app:chipStrokeWidth="1dp"
+                app:rippleColor="@color/gold"
+                app:iconStartPadding="12dp"
+                app:iconEndPadding="-1dp"
+                app:chipStartPadding="0dp"
+                app:chipEndPadding="4dp"
+                app:chipIconSize="22dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/mixed"
+                style="@style/BoldTextChip"
+                android:layout_width="wrap_content"
+                android:layout_height="58dp"
+                android:text="Mixed"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:checkable="true"
+                app:chipIcon="@drawable/ic_milk"
+                app:chipIconVisible="true"
+                app:checkedIconVisible="false"
+                app:chipBackgroundColor="@color/chip_background"
+                app:chipStrokeColor="@color/gold"
+                app:chipStrokeWidth="1dp"
+                app:rippleColor="@color/gold"
+                app:iconStartPadding="12dp"
+                app:iconEndPadding="1dp"
+                app:chipStartPadding="0dp"
+                app:chipEndPadding="4dp"
+                app:chipIconSize="23dp" />
+
+        </com.google.android.material.chip.ChipGroup>
+    </HorizontalScrollView>
+
+    <FrameLayout
+        android:layout_marginTop="5dp"
+        android:id="@+id/listormap"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+</LinearLayout>

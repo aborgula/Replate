@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Cień -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#33000000"/> <!-- półprzezroczysty cień -->
+            <corners android:radius="30dp"/>
+        </shape>
+    </item>
+
+    <!-- Gradientowy przycisk -->
+    <item android:top="4dp" android:left="4dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="linear"
+                android:angle="360"
+                android:startColor="#9D7021"
+                android:endColor="#683D3D" />
+            <corners android:radius="30dp"/>
+        </shape>
+    </item>
+
+</layer-list>

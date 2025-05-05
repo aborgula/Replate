@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/mainbackground">
+
+    <!-- Tytuł aplikacji -->
+    <ImageView
+        android:id="@+id/appTitleText"
+        android:layout_width="175dp"
+        android:background="@null"
+        android:layout_height="90dp"
+        android:src="@drawable/replatedarknarrower"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="57dp"/>
+
+    <!-- Podtytuł aplikacji -->
+    <TextView
+        android:id="@+id/appSubtitleText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Food sharing app"
+        android:textSize="18sp"
+        android:textColor="#000000"
+        app:layout_constraintTop_toBottomOf="@id/appTitleText"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="-9dp"/>
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/foodImage"
+        android:layout_width="195dp"
+        android:layout_height="195dp"
+        android:src="@drawable/plate1"
+        android:elevation="10dp"
+        app:layout_constraintBottom_toTopOf="@id/mainContentCard"
+        app:layout_constraintStart_toStartOf="@id/mainContentCard"
+        app:layout_constraintEnd_toEndOf="@id/mainContentCard"
+        android:layout_marginBottom="-110dp" />
+
+
+    <!-- Główna karta z treścią -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/mainContentCard"
+        android:layout_width="0dp"
+        android:layout_height="404dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginTop="120dp"
+        app:cardCornerRadius="40dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="@android:color/transparent"
+        app:layout_constraintTop_toBottomOf="@id/appSubtitleText"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintVertical_bias="0.25">
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/background_gradient" />
+
+        <!--  <View
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="@drawable/background_gradient"/>
+  -->
+
+
+            <TextView
+                android:id="@+id/pickupTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="160dp"
+                android:layout_gravity="center_horizontal"
+                android:text="Pick up surplus food"
+                android:textColor="#000000"
+                android:textSize="27sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <!-- Opis tekstu -->
+            <TextView
+                android:id="@+id/pickupDescription"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="197dp"
+                android:layout_marginHorizontal="40dp"
+                android:gravity="center"
+                android:lineSpacingExtra="4dp"
+                android:textStyle="bold"
+                android:text="Browse available meal packs nearby and stop good food from going to waste."
+                android:textColor="#434343"
+                android:textSize="15sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/pickupTitle" />
+
+            <!-- Wskaźniki slajdów (kropki) -->
+            <LinearLayout
+                android:layout_gravity="center_horizontal"
+                android:id="@+id/dotsIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                app:layout_constraintTop_toBottomOf="@id/pickupDescription"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="290dp">
+
+                <TextView
+                    android:id="@+id/firstdot"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="50dp"
+                    android:text="."
+                    android:textColor="@color/black"
+                  />
+                <TextView
+                    android:id="@+id/seconddot"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="50dp"
+                    android:text="."
+                    android:textColor="#45000000"
+
+                    />
+
+                <TextView
+                    android:id="@+id/lastdot"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="50dp"
+                    android:text="."
+                    android:textColor="#45000000"
+
+                    />
+            </LinearLayout>
+
+            <!-- Przycisk "dalej" -->
+
+
+                <!--<Button
+                    android:elevation="6dp"
+                    android:text="<<"
+                    android:background="@color/black"
+                    android:layout_marginTop="500dp"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center" />-->
+            </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/nextButton"
+        android:layout_width="215dp"
+        android:layout_height="56dp"
+        app:cardBackgroundColor="#FFC907"
+        app:cardCornerRadius="30dp"
+        android:elevation="16dp"
+        android:translationZ="16dp"
+        android:layout_marginBottom="-23dp"
+        app:layout_constraintBottom_toBottomOf="@id/mainContentCard"
+        app:layout_constraintStart_toStartOf="@id/mainContentCard"
+        app:layout_constraintEnd_toEndOf="@id/mainContentCard"
+        android:layout_gravity="center_horizontal">
+        <TextView
+            android:id="@+id/getstarted"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Get Started"
+            android:textColor="@color/black"
+            android:textSize="21dp"
+            android:visibility="gone"
+            android:textStyle="bold"/>
+        <ImageView
+            android:id="@+id/arrows"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:src="@drawable/ic_nextarrows"
+            android:layout_gravity="center"/>
+    </androidx.cardview.widget.CardView>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+
+

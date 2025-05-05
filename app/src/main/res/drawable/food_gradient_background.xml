@@ -4,7 +4,7 @@
     <!-- Tło podstawowe: jasny krem -->
     <item>
         <shape android:layout_height="wrap_content">
-            <solid android:color="#FFF8E7" />
+            <solid android:color="#f5dfa8" />
         </shape>
     </item>
 
@@ -14,7 +14,7 @@
             <gradient
                 android:type="radial"
                 android:gradientRadius="100%"
-                android:startColor="#E8D9FF"
+                android:startColor="#f59632"
                 android:centerX="0.1"
                 android:centerY="0.1"
                 android:endColor="@android:color/transparent" />
@@ -27,7 +27,7 @@
             <gradient
                 android:type="radial"
                 android:gradientRadius="70%"
-                android:startColor="#FFD7BA"
+                android:startColor="#dddbd8"
                 android:centerX="0.8"
                 android:centerY="0.5"
                 android:endColor="@android:color/transparent" />
@@ -40,7 +40,7 @@
             <gradient
                 android:type="radial"
                 android:gradientRadius="40%"
-                android:startColor="#CFFFE5"
+                android:startColor="#D1ED7E"
                 android:centerX="0.8"
                 android:centerY="0.1"
                 android:endColor="@android:color/transparent" />
@@ -53,7 +53,7 @@
             <gradient
                 android:type="radial"
                 android:gradientRadius="70%"
-                android:startColor="#D7F0FF"
+                android:startColor="#96b830"
                 android:centerX="0.2"
                 android:centerY="0.8"
                 android:endColor="@android:color/transparent" />

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Text sizes -->
+    <dimen name="text_title">24sp</dimen>
+    <dimen name="text_subtitle">16sp</dimen>
+    <dimen name="text_description">14sp</dimen>
+    <dimen name="text_button">20sp</dimen>
+    <dimen name="dots_size">40sp</dimen>
+
+    <!-- Spacing -->
+    <dimen name="margin_top_title">40dp</dimen>
+    <dimen name="arrow_size">40dp</dimen>
+
+    <!-- For smaller screens -->
+    <item name="text_title_small" type="dimen">20sp</item>
+    <item name="text_description_small" type="dimen">12sp</item>
+    <item name="text_button_small" type="dimen">16sp</item>
+</resources>

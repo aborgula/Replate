@@ -2,29 +2,9 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-
-    <!-- Pastelowe kolory ze zdjęcia -->
-    <color name="lemon_chiffon">#FBF8CC</color>
-    <color name="champagne_pink">#FDE4CF</color>
-    <color name="baby_pink">#FFCFD2</color>
-    <color name="pink_lavender">#F1C0E8</color>
-    <color name="lavender_blue">#CFBAF0</color>
-    <color name="baby_blue_eyes">#A3C4F3</color>
-    <color name="sky_blue">#90DBF4</color>
-    <color name="electric_blue">#8EECF5</color>
-    <color name="magic_mint">#98F5E1</color>
-    <color name="granny_smith_apple">#B9FBC0</color>
-
-
-    <color name="text_dark_pink">#D76E9F</color>     <!-- Ciemniejsza wersja Pink Lavender (F1C0E8) -->
-    <color name="text_dark_peach">#E8955B</color>    <!-- Ciemniejsza wersja Champagne Pink (FDE4CF) -->
-    <color name="text_dark_rose">#EF6E7E</color>     <!-- Ciemniejsza wersja Baby Pink (FFCFD2) -->
-    <color name="text_dark_lavender">#9860B5</color> <!-- Ciemniejsza wersja Lavender Blue -->
-    <color name="text_dark_blue">#4A79BB</color>     <!-- Ciemniejsza wersja Baby Blue Eyes (A3C4F3) -->
-    <color name="text_dark_cyan">#3B9EBD</color>     <!-- Ciemniejsza wersja Sky Blue (90DBF4) -->
-    <color name="text_dark_mint">#37AA82</color>     <!-- Ciemniejsza wersja Magic Mint (98F5E1) -->
-    <color name="text_dark_green">#5DAD53</color>    <!-- Ciemniejsza wersja Granny Smith Apple (B9FBC0) -->
-    <color name="text_dark_yellow">#CCA42A</color>
-    <!-- Przydatne kolory do interfejsu -->
     <color name="hint_color">#80FFFFFF</color>
+    <color name="green">#FFC107</color>
+    <color name="gold">#CDCD2A</color>
+    <color name="yellow">#F9DA0D</color>
+    <color name="lightgrey">#68D9D9D9</color>
 </resources>
