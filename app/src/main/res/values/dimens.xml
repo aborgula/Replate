@@ -15,4 +15,5 @@
     <item name="text_title_small" type="dimen">20sp</item>
     <item name="text_description_small" type="dimen">12sp</item>
     <item name="text_button_small" type="dimen">16sp</item>
+    <dimen name="fab_margin">16dp</dimen>
 </resources>

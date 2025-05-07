@@ -1,5 +1,6 @@
 package com.example.replate;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 
@@ -10,6 +11,7 @@ import androidx.fragment.app.ListFragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.MapFragment;
@@ -17,6 +19,7 @@ import com.google.android.gms.maps.MapFragment;
 public class PickupFragment extends Fragment {
 
     private TextView listButton, mapButton;
+    private LinearLayout filters;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -26,6 +29,13 @@ public class PickupFragment extends Fragment {
 
         listButton = root.findViewById(R.id.list);
         mapButton = root.findViewById(R.id.map);
+        filters = root.findViewById(R.id.filters);
+
+        filters.setOnClickListener(v->{
+            Intent intent;
+            intent = new Intent(getContext(), FilterActivity.class);
+            startActivity(intent);
+        });
 
         requireActivity().getSupportFragmentManager()
                 .beginTransaction()
