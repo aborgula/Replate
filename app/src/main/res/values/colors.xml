@@ -2,9 +2,13 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="hint_color">#80FFFFFF</color>
+    <color name="hint_color">#9E9E9E</color>
     <color name="green">#FFC107</color>
     <color name="gold">#CDCD2A</color>
     <color name="yellow">#F9DA0D</color>
     <color name="lightgrey">#68D9D9D9</color>
+    <color name="brown">#683D3D</color>
+    <color name="slider_active_color">#8B4513</color>  <!-- Brązowy kolor aktywnego suwaka -->
+    <color name="slider_inactive_color">#D3D3D3</color>  <!-- Jasnoszary kolor nieaktywnego suwaka -->
+    <color name="slider_thumb_color">#8B4513</color>
 </resources>

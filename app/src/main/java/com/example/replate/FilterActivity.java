@@ -2,7 +2,18 @@ package com.example.replate;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.res.ColorStateList;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.CheckBox;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.slider.LabelFormatter;
+import com.google.android.material.slider.RangeSlider;
+
+import java.util.List;
 
 public class FilterActivity extends AppCompatActivity {
 
@@ -10,5 +21,112 @@ public class FilterActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_filter);
+
+        MaterialButton todayfltr = findViewById(R.id.todayfltr);
+        MaterialButton tomorrowfltr = findViewById(R.id.tomorrowfltr);
+        MaterialButton filterbtn = findViewById(R.id.filterbtn);
+
+        final boolean[] todaySelected = {false};
+        final boolean[] tomorrowSelected = {false};
+        int defaultColor = getResources().getColor(R.color.hint_color);
+        int colorBrown = getResources().getColor(R.color.brown);
+        int defaultColorWhite = getResources().getColor(R.color.white);
+
+        RangeSlider timeSlider = findViewById(R.id.timeRangeSlider);
+
+        timeSlider.setValues(480f, 1200f);
+        timeSlider.setLabelBehavior(LabelFormatter.LABEL_FLOATING);
+
+        timeSlider.setLabelFormatter(value -> {
+            int totalMinutes = Math.round(value);
+            int hours = totalMinutes / 60;
+            int minutes = totalMinutes % 60;
+            return String.format("%02d:%02d", hours, minutes);
+        });
+
+        timeSlider.addOnChangeListener((slider, value, fromUser) -> {
+            List<Float> values = slider.getValues();
+            int startMin = Math.round(values.get(0));
+            int endMin = Math.round(values.get(1));
+
+            String start = String.format("%02d:%02d", startMin / 60, startMin % 60);
+            String end = String.format("%02d:%02d", endMin / 60, endMin % 60);
+
+            Log.d("TimeRange", "Selected: " + start + " - " + end);
+        });
+
+
+
+        todayfltr.setOnClickListener(v -> {
+            todaySelected[0] = !todaySelected[0]; // toggle state
+            if (todaySelected[0]) {
+                setFilterButtonActive(todayfltr, colorBrown, getResources().getColor(android.R.color.white));
+            } else {
+                setFilterButtonInactive(todayfltr, defaultColorWhite, colorBrown);
+            }
+        });
+
+        tomorrowfltr.setOnClickListener(v -> {
+            tomorrowSelected[0] = !tomorrowSelected[0]; // toggle state
+            if (tomorrowSelected[0]) {
+                setFilterButtonActive(tomorrowfltr, colorBrown, getResources().getColor(android.R.color.white));
+            } else {
+                setFilterButtonInactive(tomorrowfltr, defaultColorWhite, colorBrown);
+            }
+        });
+
+        ImageView arrowback = findViewById(R.id.arrowback);
+        TextView resetbtn = findViewById(R.id.resetbtn);
+
+        CheckBox[] checkBoxes = new CheckBox[]{
+                findViewById(R.id.sweets),
+                findViewById(R.id.fastfoods),
+                findViewById(R.id.meat),
+                findViewById(R.id.meals),
+                findViewById(R.id.vegetables),
+                findViewById(R.id.fruits),
+                findViewById(R.id.mixed),
+                findViewById(R.id.vegetarian),
+                findViewById(R.id.dairy),
+                findViewById(R.id.bakery),
+                findViewById(R.id.liquids),
+                findViewById(R.id.vegan)
+        };
+
+        for (CheckBox cb : checkBoxes) {
+            cb.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (isChecked) {
+                    cb.setButtonTintList(ColorStateList.valueOf(colorBrown));
+                }else{
+                    cb.setButtonTintList(ColorStateList.valueOf(defaultColor));
+t
+                }
+            });
+        }
+
+        arrowback.setOnClickListener(v -> {
+            onBackPressed();
+        });
+
+
+        resetbtn.setOnClickListener(v -> {
+            for (CheckBox cb : checkBoxes) {
+                cb.setChecked(false);
+                cb.setButtonTintList(ColorStateList.valueOf(defaultColor));
+            }
+        });
+
+
     }
+
+    private void setFilterButtonActive(MaterialButton button, int bgColor, int textColor) {
+        button.setBackgroundTintList(ColorStateList.valueOf(bgColor));
+        button.setTextColor(textColor);
+    }
+
+    private void setFilterButtonInactive(MaterialButton button, int bgColor, int textColor) {
+        button.setBackgroundTintList(ColorStateList.valueOf(bgColor));
+        button.setTextColor(textColor);
+    }
+
 }

@@ -182,6 +182,28 @@
                 app:chipIconSize="19dp" />
 
             <com.google.android.material.chip.Chip
+                android:id="@+id/vegetables"
+                style="@style/BoldTextChip"
+                android:layout_width="wrap_content"
+                android:layout_height="58dp"
+                android:text="Vegetables"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:checkable="true"
+                app:chipIcon="@drawable/ic_tomato"
+                app:chipIconVisible="true"
+                app:checkedIconVisible="false"
+                app:chipBackgroundColor="@color/chip_background"
+                app:chipStrokeColor="@color/gold"
+                app:chipStrokeWidth="1dp"
+                app:rippleColor="@color/gold"
+                app:iconStartPadding="12dp"
+                app:iconEndPadding="-2dp"
+                app:chipStartPadding="0dp"
+                app:chipEndPadding="4dp"
+                app:chipIconSize="22dp" />
+
+            <com.google.android.material.chip.Chip
                 android:id="@+id/vegetarian"
                 style="@style/BoldTextChip"
                 android:layout_width="wrap_content"
@@ -191,6 +213,28 @@
                 android:textColor="@color/black"
                 android:checkable="true"
                 app:chipIcon="@drawable/ic_fish"
+                app:chipIconVisible="true"
+                app:checkedIconVisible="false"
+                app:chipBackgroundColor="@color/chip_background"
+                app:chipStrokeColor="@color/gold"
+                app:chipStrokeWidth="1dp"
+                app:rippleColor="@color/gold"
+                app:iconStartPadding="12dp"
+                app:iconEndPadding="-2dp"
+                app:chipStartPadding="0dp"
+                app:chipEndPadding="4dp"
+                app:chipIconSize="22dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/vegan"
+                style="@style/BoldTextChip"
+                android:layout_width="wrap_content"
+                android:layout_height="58dp"
+                android:text="Vegan"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:checkable="true"
+                app:chipIcon="@drawable/ic_vegetables"
                 app:chipIconVisible="true"
                 app:checkedIconVisible="false"
                 app:chipBackgroundColor="@color/chip_background"
