@@ -1,8 +1,10 @@
 package com.example.replate;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.CheckBox;
@@ -37,6 +39,11 @@ public class FilterActivity extends AppCompatActivity {
         timeSlider.setValues(480f, 1200f);
         timeSlider.setLabelBehavior(LabelFormatter.LABEL_FLOATING);
 
+        timeSlider.setTrackActiveTintList(ContextCompat.getColorStateList(this, R.color.dark_green));
+        timeSlider.setTrackInactiveTintList(ColorStateList.valueOf(Color.LTGRAY));
+        timeSlider.setThumbTintList(ContextCompat.getColorStateList(this, R.color.gold));
+        timeSlider.setHaloTintList(ContextCompat.getColorStateList(this, R.color.light_green));
+        timeSlider.setTickTintList(ColorStateList.valueOf(Color.YELLOW));
         timeSlider.setLabelFormatter(value -> {
             int totalMinutes = Math.round(value);
             int hours = totalMinutes / 60;
@@ -99,7 +106,7 @@ public class FilterActivity extends AppCompatActivity {
                     cb.setButtonTintList(ColorStateList.valueOf(colorBrown));
                 }else{
                     cb.setButtonTintList(ColorStateList.valueOf(defaultColor));
-t
+
                 }
             });
         }
