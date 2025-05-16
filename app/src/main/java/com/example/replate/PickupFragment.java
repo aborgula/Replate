@@ -2,6 +2,7 @@ package com.example.replate;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Bundle;
 
 import androidx.core.content.ContextCompat;
@@ -19,7 +20,7 @@ import com.google.android.gms.maps.MapFragment;
 public class PickupFragment extends Fragment {
 
     private TextView listButton, mapButton;
-    private LinearLayout filters;
+    private LinearLayout filters, chooseRange;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -27,14 +28,24 @@ public class PickupFragment extends Fragment {
 
         View root = inflater.inflate(R.layout.fragment_pickup, container, false);
 
+        TextView textView = root.findViewById(R.id.your_textview_id);
+        textView.setPaintFlags(textView.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+
         listButton = root.findViewById(R.id.list);
         mapButton = root.findViewById(R.id.map);
         filters = root.findViewById(R.id.filters);
+        chooseRange = root.findViewById(R.id.chooseRange);
 
         filters.setOnClickListener(v->{
             Intent intent;
             intent = new Intent(getContext(), FilterActivity.class);
             startActivity(intent);
+        });
+
+        chooseRange.setOnClickListener(v->{
+                Intent intent;
+                intent = new Intent(getContext(), ChooseLocationRangeActivity.class);
+                startActivity(intent);
         });
 
         requireActivity().getSupportFragmentManager()

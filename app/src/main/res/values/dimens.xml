@@ -6,6 +6,7 @@
     <dimen name="text_description">14sp</dimen>
     <dimen name="text_button">20sp</dimen>
     <dimen name="dots_size">40sp</dimen>
+    <dimen name="margin_top">25sp</dimen>
 
     <!-- Spacing -->
     <dimen name="margin_top_title">40dp</dimen>
