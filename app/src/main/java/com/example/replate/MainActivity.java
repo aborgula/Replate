@@ -7,6 +7,8 @@ import android.view.animation.AnimationSet;
 import android.widget.ImageView;
 import android.os.Handler;
 
+import com.google.firebase.FirebaseApp;
+
 //API AIzaSyAJo3H3Jy6QIlPC2JCJHNzhQTSNBZgPcnE
 //SHA-1  A2:95:B8:0D:60:3D:3A:61:41:06:27:9D:45:24:3D:8E:CB:6F:01:45
 
@@ -24,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
                 android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
         );
 
-
+        FirebaseApp.initializeApp(this);
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "43391923063",
+    "project_id": "replate-a116a",
+    "storage_bucket": "replate-a116a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:43391923063:android:c8b849f6320dd1d2b36772",
+        "android_client_info": {
+          "package_name": "com.example.replate"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "43391923063-f2v45s8vqdtjn6roj3dep1i4kduegto3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.replate",
+            "certificate_hash": "38fe01c9ee05eedf37939706df21d26a5fa8b81f"
+          }
+        },
+        {
+          "client_id": "43391923063-e40s25top7dqs9apee3u71319u4hhjl6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDtG9S1RtOrLmTWpvvxN_m4lTvjA9VMEOc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "43391923063-e40s25top7dqs9apee3u71319u4hhjl6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
