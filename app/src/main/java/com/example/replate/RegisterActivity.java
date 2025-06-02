@@ -240,7 +240,7 @@ public class RegisterActivity extends AppCompatActivity {
 
                         } else {
                             // Błąd rejestracji
-                            Toast.makeText(RegisterActivity.this, "Registration error: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                            Toast.makeText(RegisterActivity.this, task.getException().getMessage(), Toast.LENGTH_LONG).show();
                             Log.e("FirebaseAuth", "Register error", task.getException());
                         }
                     });
