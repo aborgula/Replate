@@ -32,10 +32,13 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthOptions;
 import com.google.firebase.auth.PhoneAuthProvider;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import android.util.Log;
 import android.widget.Toast;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 
@@ -220,8 +223,9 @@ public class RegisterActivity extends AppCompatActivity {
         registerbtn.setOnClickListener(v -> {
             String email = mail.getText().toString().trim();
             String pass = password.getText().toString().trim();
+            String loginValue = login.getText().toString().trim();
 
-            if (email.isEmpty() || pass.isEmpty()) {
+            if (email.isEmpty() || pass.isEmpty() || loginValue.isEmpty()) {
                 Toast.makeText(RegisterActivity.this, "Fill all fields", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -229,22 +233,35 @@ public class RegisterActivity extends AppCompatActivity {
             mAuth.createUserWithEmailAndPassword(email, pass)
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
-                            // Rejestracja udana
                             FirebaseUser user = mAuth.getCurrentUser();
-                            Toast.makeText(RegisterActivity.this, "Registered: " + user.getEmail(), Toast.LENGTH_SHORT).show();
+                            String userId = user.getUid();
 
-                            // Przejście do HomeActivity
-                            Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
-                            startActivity(intent);
-                            finish();
+                            // Zapisz dane do Firestore
+                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+                            Map<String, Object> userData = new HashMap<>();
+                            userData.put("login", loginValue);
+                            userData.put("email", email);
+
+                            db.collection("users").document(userId)
+                                    .set(userData)
+                                    .addOnSuccessListener(aVoid -> {
+                                        Toast.makeText(RegisterActivity.this, "Zarejestrowano i zapisano dane", Toast.LENGTH_SHORT).show();
+                                        // Przejście do HomeActivity
+                                        Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
+                                        startActivity(intent);
+                                        finish();
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Toast.makeText(RegisterActivity.this, "Błąd zapisu danych: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    });
 
                         } else {
-                            // Błąd rejestracji
                             Toast.makeText(RegisterActivity.this, task.getException().getMessage(), Toast.LENGTH_LONG).show();
                             Log.e("FirebaseAuth", "Register error", task.getException());
                         }
                     });
         });
+
 
         signinbtn.setOnClickListener(v -> {
             Animation slideDown = AnimationUtils.loadAnimation(this, R.anim.slide_down);

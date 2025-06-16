@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:padding="24dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.button.MaterialButton
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="49dp"
+            android:text="Today"
+            android:textSize="15dp"
+            android:id="@+id/todayfltr"
+            android:textAllCaps="false"
+            android:textColor="@color/brown"
+            android:textStyle="bold"
+            app:cornerRadius="12dp"
+            app:backgroundTint="#FFFFFF"
+            android:elevation="8dp"
+            />
+        <Space
+            android:layout_width="10dp"
+            android:layout_height="2dp"/>
+        <com.google.android.material.button.MaterialButton
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="49dp"
+            android:text="Tomorrow"
+            android:textSize="15dp"
+            android:id="@+id/tomorrowfltr"
+            android:textAllCaps="false"
+            android:textColor="@color/brown"
+            android:textStyle="bold"
+            app:cornerRadius="12dp"
+            app:backgroundTint="#ffffff"
+            android:elevation="8dp"
+            />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="16dp"
+        android:weightSum="2">
+
+        <TextView
+            android:gravity="center"
+            android:id="@+id/startTimeText"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:padding="7dp"
+            android:text="Select start time"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:background="@drawable/bg_edittext" />
+
+        <Space
+            android:layout_width="10dp"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:gravity="center"
+            android:id="@+id/endTimeText"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:padding="7dp"
+            android:textStyle="bold"
+            android:text="Select end time"
+            android:textColor="@color/black"
+            android:background="@drawable/bg_edittext" />
+    </LinearLayout>
+
+    <AutoCompleteTextView
+        android:id="@+id/locationAutoComplete"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:hint="Enter location"
+        android:padding="12dp"
+        android:background="@drawable/bg_edittext"
+        android:textColor="@color/black"
+        android:textSize="15sp"
+        android:inputType="text"
+        android:singleLine="true" />
+    <LinearLayout
+        android:id="@+id/mylocation"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <ImageView
+            android:layout_gravity="center_vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_navigation"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="My location"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:layout_marginStart="7dp"/>
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:id="@+id/bottomPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingVertical="25dp"
+        android:background="@drawable/bg_bottom_panel"
+        android:elevation="6dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/back"
+            android:text="@string/underlined_back"
+            android:textColor="@color/black"
+            android:textSize="16dp"/>
+
+
+        <com.google.android.material.button.MaterialButton
+            android:layout_width="200dp"
+            android:layout_height="55dp"
+            android:text="Next"
+            android:textSize="17dp"
+            android:id="@+id/next"
+            android:layout_marginStart="30dp"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            app:cornerRadius="12dp"
+            app:backgroundTint="@color/green"
+            app:iconTint="@android:color/white"
+            android:elevation="8dp"
+            />
+    </LinearLayout>
+
+</LinearLayout>

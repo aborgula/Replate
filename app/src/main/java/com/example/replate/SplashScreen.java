@@ -27,6 +27,7 @@ public class SplashScreen extends AppCompatActivity {
 
         SharedPreferences sharedPref = getSharedPreferences("MyPrefs", MODE_PRIVATE);
         boolean isFirstRun = sharedPref.getBoolean("isFirstRun", true);
+        boolean isLoggedIn = sharedPref.getBoolean("isLoggedIn", false);
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -60,12 +61,16 @@ public class SplashScreen extends AppCompatActivity {
             Intent intent;
             if (isFirstRun) {
                 SharedPreferences.Editor editor = sharedPref.edit();
-               // editor.putBoolean("isFirstRun", false);
-               // editor.apply();
+                editor.putBoolean("isFirstRun", false);
+                editor.apply();
 
                 intent = new Intent(SplashScreen.this, IntroductionActivity.class);
             } else {
-                intent = new Intent(SplashScreen.this, IntroductionActivity.class);
+                if(isLoggedIn){
+                    intent = new Intent(SplashScreen.this, HomeActivity.class);
+                }else{
+                    intent = new Intent(SplashScreen.this, LoginActivity.class);
+                }
             }
             startActivity(intent);
             finish();

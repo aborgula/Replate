@@ -75,7 +75,7 @@
             android:stepSize="1"
             app:labelBehavior="floating"/>
 
-        <EditText
+        <AutoCompleteTextView
             android:id="@+id/searchcity"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -87,6 +87,7 @@
             android:gravity="center_vertical|start"
             android:layout_marginHorizontal="25dp"
             android:paddingVertical="11dp"/>
+
 
         <LinearLayout
             android:layout_marginVertical="18dp"

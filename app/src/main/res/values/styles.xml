@@ -4,4 +4,12 @@
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">12dp</item>
     </style>
+    <style name="CustomEditText" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/brown</item>
+    </style>
+    <style name="YourTimePickerTheme" parent="Theme.MaterialComponents.DayNight.Dialog">
+        <item name="colorAccent">@color/green</item>
+        <item name="colorPrimary">@color/brown</item>
+        <item name="colorOnPrimary">@color/brown</item>
+    </style>
 </resources>

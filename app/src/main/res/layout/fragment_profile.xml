@@ -1,15 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-   android:background="#222299"
-    tools:context=".ProfileFragment">
+    android:orientation="vertical"
+    android:gravity="center_horizontal">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <ImageView
+        android:id="@+id/profile_image"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:src="@drawable/image_profile"
+        android:layout_marginTop="50dp"
+        android:scaleType="centerCrop"
+        android:background="@drawable/background_circle_photo"
+        android:clickable="true"
+        android:clipToOutline="true"
+        android:focusable="true" />
+    <LinearLayout
+        android:layout_marginTop="10dp"
+        android:gravity="center"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_height="wrap_content">
 
-</FrameLayout>
+        <ImageView
+            android:id="@+id/star1"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/no_review" />
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:id="@+id/star2"
+            android:src="@drawable/no_review"/>
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:id="@+id/star3"
+            android:src="@drawable/no_review"/>
+        <ImageView
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:id="@+id/star4"
+            android:src="@drawable/no_review"/>
+        <ImageView
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:id="@+id/star5"
+            android:src="@drawable/no_review"/>
+
+    </LinearLayout>
+
+    <TextView
+        android:visibility="gone"
+        android:gravity="center"
+        android:id="@+id/noreviews"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No reviews"/>
+
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/logoutbtn"
+        android:layout_gravity="center_horizontal"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        app:cardElevation="8dp"
+        app:cardCornerRadius="15dp"
+        android:layout_marginTop="33dp"
+        android:layout_marginBottom="23dp"
+        app:cardBackgroundColor="@android:color/transparent"
+        >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/logout_btn"
+            android:paddingVertical="10dp">
+
+            <TextView
+                android:layout_gravity="center_horizontal"
+                android:layout_width="wrap_content"
+                android:textAlignment="center"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="LOGOUT"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
+
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+
+</LinearLayout>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:padding="24dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/CustomEditText"
+            android:hint="Enter price"
+            app:hintTextColor="@color/brown">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/addprice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLength="30"
+                android:inputType="numberDecimal" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_marginTop="18dp"
+        android:layout_width="match_parent"
+        app:hintTextColor="@color/brown"
+        android:layout_height="wrap_content"
+        style="@style/CustomEditText"
+        android:hint="Enter phone number">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/addphonenumber"
+            android:maxLength="15"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="phone" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <LinearLayout
+        android:id="@+id/bottomPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingVertical="25dp"
+        android:background="@drawable/bg_bottom_panel"
+        android:elevation="6dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/back"
+            android:text="@string/underlined_back"
+            android:textColor="@color/black"
+            android:textSize="16dp"/>
+
+
+        <com.google.android.material.button.MaterialButton
+            android:layout_width="200dp"
+            android:layout_height="55dp"
+            android:text="Next"
+            android:textSize="17dp"
+            android:id="@+id/next"
+            android:layout_marginStart="30dp"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            app:cornerRadius="12dp"
+            app:backgroundTint="@color/green"
+            app:iconTint="@android:color/white"
+            android:elevation="8dp"
+            />
+    </LinearLayout>
+
+</LinearLayout>
