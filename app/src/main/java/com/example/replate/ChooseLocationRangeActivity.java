@@ -1,5 +1,6 @@
 package com.example.replate;
 
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -21,6 +22,9 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.libraries.places.api.Places;
@@ -33,6 +37,8 @@ import com.google.android.material.slider.Slider;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -55,6 +61,8 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
     private TextView usecurrentlocation;
     private FusedLocationProviderClient fusedLocationClient;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
+    private Circle currentCircle;
+    private LatLng selectedLocation;
 
     private static final String MAP_VIEW_BUNDLE_KEY = "MapViewBundleKey";
 
@@ -148,6 +156,24 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
                         LatLng location = place.getLatLng();
                         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 12f));
                         googleMap.addMarker(new MarkerOptions().position(location).title(place.getName()));
+                        selectedLocation = location;
+
+                        // Usuń poprzednie kółko jeśli istnieje
+                        if (currentCircle != null) currentCircle.remove();
+                        int radiusKm = getSharedPreferences("MyPrefs", MODE_PRIVATE).getInt("selected_distance_km", 5);
+                        currentCircle = googleMap.addCircle(new CircleOptions()
+                                .center(location)
+                                .radius(radiusKm * 1000) // w metrach
+                                .strokeColor(Color.parseColor("#3300AA00")) // ciemniejszy zielony brzeg
+                                .fillColor(Color.parseColor("#5533CC33")) // półprzezroczyste wypełnienie
+                                .strokeWidth(2f));
+
+                        //  Zapis do SharedPreferences
+                        SharedPreferences prefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
+                        SharedPreferences.Editor editor = prefs.edit();
+                        editor.putString("lastPlaceId", selectedPlaceId);
+                        editor.putString("lastPlaceName", place.getName());
+                        editor.apply();
                     }
                 }).addOnFailureListener(e -> Log.e("PlacesAPI", "Place fetch failed", e));
             }
@@ -155,7 +181,7 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
 
         // === Distance Slider ===
         Slider distanceSlider = findViewById(R.id.distanceSlider);
-        int savedKm = getSharedPreferences("replate_prefs", MODE_PRIVATE).getInt("selected_distance_km", 5);
+        int savedKm = getSharedPreferences("MyPrefs", MODE_PRIVATE).getInt("selected_distance_km", 5);
         distanceSlider.setValue(savedKm);
 
         distanceSlider.setTrackActiveTintList(ContextCompat.getColorStateList(this, R.color.green));
@@ -168,15 +194,27 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
 
         distanceSlider.addOnChangeListener((slider, value, fromUser) -> {
             int selectedKm = Math.round(value);
-            getSharedPreferences("replate_prefs", MODE_PRIVATE)
+            getSharedPreferences("MyPrefs", MODE_PRIVATE)
                     .edit()
                     .putInt("selected_distance_km", selectedKm)
                     .apply();
+
+            //  Jeśli wybrano wcześniej lokalizację i mapa gotowa, zaktualizuj kółko
+            if (selectedLocation != null && googleMap != null) {
+                if (currentCircle != null) currentCircle.remove(); // usuń stare
+
+                currentCircle = googleMap.addCircle(new CircleOptions()
+                        .center(selectedLocation)
+                        .radius(selectedKm * 1000)
+                        .strokeColor(Color.parseColor("#3300AA00"))
+                        .fillColor(Color.parseColor("#5533CC33"))
+                        .strokeWidth(2f));
+            }
         });
     }
 
     // === MapView Lifecycle ===
-    @Override public void onMapReady(GoogleMap map) { googleMap = map; }
+   // @Override public void onMapReady(GoogleMap map) { googleMap = map; }
     @Override protected void onResume() { super.onResume(); mapView.onResume(); }
     @Override protected void onStart() { super.onStart(); mapView.onStart(); }
     @Override protected void onStop() { mapView.onStop(); super.onStop(); }
@@ -187,5 +225,81 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
         Bundle mapViewBundle = new Bundle();
         mapView.onSaveInstanceState(mapViewBundle);
         outState.putBundle(MAP_VIEW_BUNDLE_KEY, mapViewBundle);
+    }
+
+    @Override
+    public void onMapReady(GoogleMap map) {
+        this.googleMap = map;
+
+        SharedPreferences prefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
+
+        // Pobierz dane z SharedPreferences
+        String lastPlaceName = prefs.getString("lastPlaceName", null);
+        String lastPlaceId = prefs.getString("lastPlaceId", null);
+        int radiusKm = prefs.getInt("selected_distance_km", 1); // domyślnie 1 km
+
+        if (lastPlaceId != null) {
+            FetchPlaceRequest placeRequest = FetchPlaceRequest.builder(
+                    lastPlaceId,
+                    Arrays.asList(Place.Field.LAT_LNG, Place.Field.NAME)
+            ).build();
+
+            placesClient.fetchPlace(placeRequest).addOnSuccessListener(response -> {
+                Place place = response.getPlace();
+                if (place.getLatLng() != null) {
+                    LatLng location = place.getLatLng();
+                    selectedLocation = location;
+
+                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 12f));
+                    map.addMarker(new MarkerOptions().position(location).title(lastPlaceName != null ? lastPlaceName : "Saved Location"));
+
+                    // Dodaj kółko
+                    currentCircle = map.addCircle(new CircleOptions()
+                            .center(location)
+                            .radius(radiusKm * 1000)
+                            .strokeColor(Color.parseColor("#3300AA00"))
+                            .fillColor(Color.parseColor("#5533CC33"))
+                            .strokeWidth(2f));
+                }
+            }).addOnFailureListener(e -> Log.e("PlacesAPI", "Auto-fetch failed", e));
+        }
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("parcels")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        String placeId = document.getString("placeId");
+                        String title = document.getString("title");
+
+                        if (placeId != null && !placeId.isEmpty()) {
+                            fetchPlaceAndAddMarker(placeId, title);
+                        } else {
+                            Log.w("ParcelData", "Missing placeId for parcel: " + document.getId());
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> Log.e("Firestore", "Error loading parcels", e));
+    }
+
+    private void fetchPlaceAndAddMarker(String placeId, String title) {
+        List<Place.Field> placeFields = Arrays.asList(Place.Field.LAT_LNG, Place.Field.NAME);
+
+        FetchPlaceRequest request = FetchPlaceRequest.builder(placeId, placeFields).build();
+        placesClient.fetchPlace(request)
+                .addOnSuccessListener(response -> {
+                    Place place = response.getPlace();
+                    LatLng location = place.getLatLng();
+                    if (location != null && googleMap != null) {
+                        googleMap.addCircle(new CircleOptions()
+                                .center(location)
+                                .radius(20)
+                                .fillColor(Color.parseColor("#33CC33"))
+                                .strokeWidth(0f));
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("PlacesAPI", "Failed to fetch place for parcel: " + placeId, e);
+                });
     }
 }

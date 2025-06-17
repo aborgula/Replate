@@ -1,25 +1,32 @@
 package com.example.replate;
 
 import android.content.Intent;
-import android.graphics.Color;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Paint;
 import android.os.Bundle;
-
+import android.Manifest;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.ListFragment;
-
+import androidx.lifecycle.ViewModelProvider;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
-import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 public class PickupFragment extends Fragment {
 
-    private TextView listButton, mapButton;
+    private TextView listButton, mapButton, chosenLocation, within;
     private LinearLayout filters, chooseRange;
 
     @Override
@@ -28,6 +35,7 @@ public class PickupFragment extends Fragment {
 
         View root = inflater.inflate(R.layout.fragment_pickup, container, false);
 
+        PickupSharedViewModel viewModel = new ViewModelProvider(requireActivity()).get(PickupSharedViewModel.class);
         TextView textView = root.findViewById(R.id.your_textview_id);
         textView.setPaintFlags(textView.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
 
@@ -35,6 +43,8 @@ public class PickupFragment extends Fragment {
         mapButton = root.findViewById(R.id.map);
         filters = root.findViewById(R.id.filters);
         chooseRange = root.findViewById(R.id.chooseRange);
+        chosenLocation = root.findViewById(R.id.your_textview_id);
+        within = root.findViewById(R.id.within);
 
         filters.setOnClickListener(v->{
             Intent intent;
@@ -52,6 +62,17 @@ public class PickupFragment extends Fragment {
                 .beginTransaction()
                 .replace(R.id.listormap, new FragmentList())
                 .commit();
+
+        ChipGroup chipGroup = root.findViewById(R.id.chipGroup);
+        for (int i = 0; i < chipGroup.getChildCount(); i++) {
+            View chipView = chipGroup.getChildAt(i);
+            if (chipView instanceof Chip) {
+                Chip chip = (Chip) chipView;
+                chip.setOnCheckedChangeListener((compoundButton, isChecked) -> {
+                    updateSelectedChips(chipGroup, viewModel);
+                });
+            }
+        }
 
         listButton.setOnClickListener(v -> {
             requireActivity().getSupportFragmentManager()
@@ -76,8 +97,51 @@ public class PickupFragment extends Fragment {
             listButton.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.lightgrey));
             listButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.yellow));
         });
-
-
         return root;
     }
+
+    private void updateSelectedChips(ChipGroup chipGroup, PickupSharedViewModel viewModel) {
+        List<String> selectedChips = new ArrayList<>();
+        for (int i = 0; i < chipGroup.getChildCount(); i++) {
+            View chipView = chipGroup.getChildAt(i);
+            if (chipView instanceof Chip) {
+                Chip chip = (Chip) chipView;
+                if (chip.isChecked()) {
+                    selectedChips.add(chip.getText().toString());
+                }
+            }
+        }
+        Log.d("chips", "All selected chips: " + selectedChips);
+        viewModel.setSelectedChips(selectedChips);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", getContext().MODE_PRIVATE);
+        String lastPlaceName = prefs.getString("lastPlaceName", null);
+        int selectedDistanceKm = prefs.getInt("selected_distance_km", 1);
+
+        within.setText("Within " + selectedDistanceKm + " km");
+
+        if (lastPlaceName != null) {
+            chosenLocation.setText(lastPlaceName);
+        } else {
+            FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
+            if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
+                    if (location != null) {
+                        chosenLocation.setText(String.format(Locale.getDefault(), "%.4f, %.4f",
+                                location.getLatitude(), location.getLongitude()));
+                    } else {
+                        chosenLocation.setText("Unable to fetch location.");
+                    }
+                });
+            } else {
+                chosenLocation.setText("App doesn't have permission to access your location.");
+            }
+        }
+    }
+
 }

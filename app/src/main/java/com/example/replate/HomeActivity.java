@@ -69,6 +69,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -821,12 +822,20 @@ imageRef.putBytes(imageBytes)
 // 🟢 Zamiast uploadu zdjęcia — od razu zapisz dane bez pola imageUrl:
             FirebaseFirestore db = FirebaseFirestore.getInstance();
             Map<String, Object> parcelData = new HashMap<>();
+            String dateToSave;
+            Calendar calendar = Calendar.getInstance();
+
+            if ("tomorrow".equalsIgnoreCase(selectedDay)) {
+                calendar.add(Calendar.DAY_OF_YEAR, 1);
+            }
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            dateToSave = sdf.format(calendar.getTime());
+            parcelData.put("date", dateToSave);
             parcelData.put("title", title);
             parcelData.put("description", description);
             parcelData.put("tags", selectedTags);
             parcelData.put("startTime", startTime);
             parcelData.put("endTime", endTime);
-            parcelData.put("day", selectedDay);
             parcelData.put("address", selectedFullAddress);
             parcelData.put("placeId", selectedPlaceId);
 // parcelData.put("imageUrl", downloadUri.toString()); // brak zdjęcia

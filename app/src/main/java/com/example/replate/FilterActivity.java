@@ -2,7 +2,11 @@ package com.example.replate;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -10,11 +14,9 @@ import android.util.Log;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.slider.LabelFormatter;
 import com.google.android.material.slider.RangeSlider;
-
 import java.util.List;
 
 public class FilterActivity extends AppCompatActivity {
@@ -62,12 +64,12 @@ public class FilterActivity extends AppCompatActivity {
             Log.d("TimeRange", "Selected: " + start + " - " + end);
         });
 
-
-
         todayfltr.setOnClickListener(v -> {
             todaySelected[0] = !todaySelected[0]; // toggle state
             if (todaySelected[0]) {
                 setFilterButtonActive(todayfltr, colorBrown, getResources().getColor(android.R.color.white));
+                tomorrowSelected[0] = false;
+                setFilterButtonInactive(tomorrowfltr, defaultColorWhite, colorBrown);
             } else {
                 setFilterButtonInactive(todayfltr, defaultColorWhite, colorBrown);
             }
@@ -77,10 +79,39 @@ public class FilterActivity extends AppCompatActivity {
             tomorrowSelected[0] = !tomorrowSelected[0]; // toggle state
             if (tomorrowSelected[0]) {
                 setFilterButtonActive(tomorrowfltr, colorBrown, getResources().getColor(android.R.color.white));
+                todaySelected[0] = false;
+                setFilterButtonInactive(todayfltr, defaultColorWhite, colorBrown);
             } else {
                 setFilterButtonInactive(tomorrowfltr, defaultColorWhite, colorBrown);
             }
         });
+
+        filterbtn.setOnClickListener(v -> {
+            // Zapisz datę tylko jeśli któryś jest zaznaczony
+            if (todaySelected[0]) {
+                Calendar calendar = Calendar.getInstance();
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                String todayDate = sdf.format(calendar.getTime());
+                saveSelectedDateToPrefs("selectedDate", todayDate);
+            } else if (tomorrowSelected[0]) {
+                Calendar calendar = Calendar.getInstance();
+                calendar.add(Calendar.DAY_OF_YEAR, 1);
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                String tomorrowDate = sdf.format(calendar.getTime());
+                saveSelectedDateToPrefs("selectedDate", tomorrowDate);
+            } else {
+                // Jeśli nic nie zaznaczone – usuń filtr daty
+                saveSelectedDateToPrefs("selectedDate", "");
+            }
+
+            // Start HomeActivity z informacją, żeby pokazać PickupFragment
+            Intent intent = new Intent(FilterActivity.this, HomeActivity.class);
+           // intent.putExtra("showPickupFragment", true);
+            //intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+        });
+
 
         ImageView arrowback = findViewById(R.id.arrowback);
         TextView resetbtn = findViewById(R.id.resetbtn);
@@ -135,5 +166,14 @@ public class FilterActivity extends AppCompatActivity {
         button.setBackgroundTintList(ColorStateList.valueOf(bgColor));
         button.setTextColor(textColor);
     }
+
+    private void saveSelectedDateToPrefs(String key, String value) {
+        Log.d("rrr", "value : "+ value);
+        getSharedPreferences("MyPrefs", MODE_PRIVATE)
+                .edit()
+                .putString(key, value)
+                .apply();
+    }
+
 
 }
