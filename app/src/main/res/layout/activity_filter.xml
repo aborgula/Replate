@@ -123,6 +123,7 @@
                 android:textColor="#C3000000"
                 android:textSize="24dp"
                 android:textStyle="bold"/>
+
             <LinearLayout
                 android:layout_marginVertical="12dp"
                 android:id="@+id/checkboxGroup"
@@ -271,8 +272,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="2dp"/>
 
-
-
             <LinearLayout
                 android:layout_marginVertical="12dp"
                 android:layout_width="match_parent"
@@ -307,7 +306,6 @@
                 android:background="@color/lightgrey"
                 android:layout_width="match_parent"
                 android:layout_height="2dp"/>
-
 
             <LinearLayout
                 android:layout_marginVertical="12dp"
@@ -344,7 +342,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="2dp"/>
 
-
             <LinearLayout
                 android:layout_marginVertical="12dp"
                 android:layout_width="match_parent"
@@ -379,7 +376,6 @@
                 android:background="@color/lightgrey"
                 android:layout_width="match_parent"
                 android:layout_height="2dp"/>
-
 
             <LinearLayout
                 android:layout_marginVertical="12dp"
@@ -416,7 +412,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="2dp"/>
 
-
             <LinearLayout
                 android:layout_marginVertical="12dp"
                 android:layout_width="match_parent"
@@ -452,7 +447,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="2dp"/>
 
-
             <LinearLayout
                 android:layout_marginVertical="12dp"
                 android:layout_width="match_parent"
@@ -483,7 +477,6 @@
                     android:layout_width="30dp"
                     android:layout_height="30dp" />
             </LinearLayout>
-
 
             <TextView
                 android:layout_marginTop="10dp"

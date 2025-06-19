@@ -34,6 +34,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 public class FragmentMap extends Fragment implements OnMapReadyCallback {
 
@@ -50,16 +51,16 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        PickupSharedViewModel viewModel = new ViewModelProvider(requireActivity()).get(PickupSharedViewModel.class);
+        // Odczytaj selectedChips z SharedPreferences
+        SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        Set<String> selectedChipsSet = prefs.getStringSet("selectedChips", null);
+        currentSelectedChips = selectedChipsSet != null ? new ArrayList<>(selectedChipsSet) : new ArrayList<>();
 
-        viewModel.getSelectedChips().observe(getViewLifecycleOwner(), selectedChips -> {
-            currentSelectedChips = selectedChips != null ? selectedChips : new ArrayList<>();
-            if (googleMap != null) {
-                googleMap.clear(); // czyścimy mapę przed nowym załadowaniem markerów
-            }
-            loadParcelsAndShowMarkers();
-        });
-
+        if (googleMap != null) {
+            googleMap.clear();
+        }
+        loadParcelsAndShowMarkers();
+        reloadMarkers();
 
         return inflater.inflate(R.layout.fragment_map, container, false);
     }
@@ -176,6 +177,27 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
                             }
                         }
 
+                        // Filtrowanie po czasie
+                        if (showParcel) {
+                            int filterStart = prefs.getInt("startTimeMinutes", 0);       // od 00:00
+                            int filterEnd = prefs.getInt("endTimeMinutes", 1439);        // do 23:59
+
+                            String parcelStartStr = document.getString("startTime");     // np. "20:23"
+                            String parcelEndStr = document.getString("endTime");         // np. "22:00"
+
+                            if (parcelStartStr != null && parcelEndStr != null
+                                    && parcelStartStr.matches("\\d{2}:\\d{2}") && parcelEndStr.matches("\\d{2}:\\d{2}")) {
+
+                                int parcelStartMin = timeStringToMinutes(parcelStartStr);
+                                int parcelEndMin = timeStringToMinutes(parcelEndStr);
+
+                                // Jeśli paczka kończy się przed początkiem filtra lub zaczyna po końcu filtra — pomijamy ją
+                                if (parcelEndMin < filterStart || parcelStartMin > filterEnd) {
+                                    showParcel = false;
+                                }
+                            }
+                        }
+
                         if (showParcel) {
                             String placeId = document.getString("placeId");
                             String title = document.getString("title");
@@ -189,6 +211,7 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
                 .addOnFailureListener(e -> {
                     Toast.makeText(requireContext(), "Failed to load parcels: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+
     }
 
     private void fetchPlaceAndAddMarker(String placeId, String title) {
@@ -222,6 +245,26 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
         } catch (SecurityException e) {
             Toast.makeText(requireContext(), "Location permission not granted", Toast.LENGTH_SHORT).show();
             Log.e("FragmentMap", "SecurityException: " + e.getMessage());
+        }
+    }
+
+    private int timeStringToMinutes(String timeStr) {
+        String[] parts = timeStr.split(":");
+        int hour = Integer.parseInt(parts[0]);
+        int minute = Integer.parseInt(parts[1]);
+        return hour * 60 + minute;
+    }
+
+    public void reloadMarkers() {
+        // Wczytaj selectedChips z prefs ponownie
+        SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        Set<String> selectedChipsSet = prefs.getStringSet("selectedChips", null);
+        Log.d("selectedtags", "w reloadmarkers w fragmentmap " + selectedChipsSet);
+        currentSelectedChips = selectedChipsSet != null ? new ArrayList<>(selectedChipsSet) : new ArrayList<>();
+
+        if (googleMap != null) {
+            googleMap.clear();
+            loadParcelsAndShowMarkers();
         }
     }
 

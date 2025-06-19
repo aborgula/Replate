@@ -2,11 +2,9 @@ package com.example.replate;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Locale;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -14,12 +12,20 @@ import android.util.Log;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.slider.LabelFormatter;
 import com.google.android.material.slider.RangeSlider;
-import java.util.List;
+
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class FilterActivity extends AppCompatActivity {
+
+    private final Map<CheckBox, String> checkboxTagMap = new HashMap<>();
+    private final List<CheckBox> checkBoxes = new ArrayList<>();
+    private int defaultColor;
+    private int colorBrown;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,132 +35,146 @@ public class FilterActivity extends AppCompatActivity {
         MaterialButton todayfltr = findViewById(R.id.todayfltr);
         MaterialButton tomorrowfltr = findViewById(R.id.tomorrowfltr);
         MaterialButton filterbtn = findViewById(R.id.filterbtn);
+        ImageView arrowback = findViewById(R.id.arrowback);
+        TextView resetbtn = findViewById(R.id.resetbtn);
 
-        final boolean[] todaySelected = {false};
-        final boolean[] tomorrowSelected = {false};
-        int defaultColor = getResources().getColor(R.color.hint_color);
-        int colorBrown = getResources().getColor(R.color.brown);
+        defaultColor = getResources().getColor(R.color.hint_color);
+        colorBrown = getResources().getColor(R.color.brown);
         int defaultColorWhite = getResources().getColor(R.color.white);
 
+        // Slider
         RangeSlider timeSlider = findViewById(R.id.timeRangeSlider);
-
-        timeSlider.setValues(480f, 1200f);
-        timeSlider.setLabelBehavior(LabelFormatter.LABEL_FLOATING);
-
         timeSlider.setTrackActiveTintList(ContextCompat.getColorStateList(this, R.color.dark_green));
         timeSlider.setTrackInactiveTintList(ColorStateList.valueOf(Color.LTGRAY));
         timeSlider.setThumbTintList(ContextCompat.getColorStateList(this, R.color.gold));
         timeSlider.setHaloTintList(ContextCompat.getColorStateList(this, R.color.light_green));
         timeSlider.setTickTintList(ColorStateList.valueOf(Color.YELLOW));
-        timeSlider.setLabelFormatter(value -> {
-            int totalMinutes = Math.round(value);
-            int hours = totalMinutes / 60;
-            int minutes = totalMinutes % 60;
-            return String.format("%02d:%02d", hours, minutes);
-        });
+        timeSlider.setLabelFormatter(value -> String.format("%02d:%02d", (int)value / 60, (int)value % 60));
+
+        // Wczytaj z prefs czas
+        SharedPreferences prefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
+        int startTime = prefs.getInt("startTimeMinutes", 0);
+        int endTime = prefs.getInt("endTimeMinutes", 1439);
+        timeSlider.setValues((float) startTime, (float) endTime);
 
         timeSlider.addOnChangeListener((slider, value, fromUser) -> {
             List<Float> values = slider.getValues();
             int startMin = Math.round(values.get(0));
             int endMin = Math.round(values.get(1));
-
-            String start = String.format("%02d:%02d", startMin / 60, startMin % 60);
-            String end = String.format("%02d:%02d", endMin / 60, endMin % 60);
-
-            Log.d("TimeRange", "Selected: " + start + " - " + end);
+            prefs.edit()
+                    .putInt("startTimeMinutes", startMin)
+                    .putInt("endTimeMinutes", endMin)
+                    .apply();
         });
 
-        todayfltr.setOnClickListener(v -> {
-            todaySelected[0] = !todaySelected[0]; // toggle state
-            if (todaySelected[0]) {
-                setFilterButtonActive(todayfltr, colorBrown, getResources().getColor(android.R.color.white));
-                tomorrowSelected[0] = false;
-                setFilterButtonInactive(tomorrowfltr, defaultColorWhite, colorBrown);
-            } else {
-                setFilterButtonInactive(todayfltr, defaultColorWhite, colorBrown);
-            }
-        });
+        // Checkboxy
+        addCheckbox(R.id.sweets, "Sweets");
+        addCheckbox(R.id.fastfoods, "Fast food");
+        addCheckbox(R.id.meat, "Meat");
+        addCheckbox(R.id.meals, "Meals");
+        addCheckbox(R.id.vegetables, "Vegetables");
+        addCheckbox(R.id.fruits, "Fruits");
+        addCheckbox(R.id.mixed, "Mixed");
+        addCheckbox(R.id.vegetarian, "Vegetarian");
+        addCheckbox(R.id.dairy, "Dairy");
+        addCheckbox(R.id.bakery, "Bakery");
+        addCheckbox(R.id.liquids, "Liquids");
+        addCheckbox(R.id.vegan, "Vegan");
 
-        tomorrowfltr.setOnClickListener(v -> {
-            tomorrowSelected[0] = !tomorrowSelected[0]; // toggle state
-            if (tomorrowSelected[0]) {
-                setFilterButtonActive(tomorrowfltr, colorBrown, getResources().getColor(android.R.color.white));
-                todaySelected[0] = false;
-                setFilterButtonInactive(todayfltr, defaultColorWhite, colorBrown);
-            } else {
-                setFilterButtonInactive(tomorrowfltr, defaultColorWhite, colorBrown);
-            }
-        });
+        Set<String> savedTags = prefs.getStringSet("selectedChips", new HashSet<>());
+        for (Map.Entry<CheckBox, String> entry : checkboxTagMap.entrySet()) {
+            CheckBox cb = entry.getKey();
+            String tag = entry.getValue();
 
-        filterbtn.setOnClickListener(v -> {
-            // Zapisz datę tylko jeśli któryś jest zaznaczony
-            if (todaySelected[0]) {
-                Calendar calendar = Calendar.getInstance();
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                String todayDate = sdf.format(calendar.getTime());
-                saveSelectedDateToPrefs("selectedDate", todayDate);
-            } else if (tomorrowSelected[0]) {
-                Calendar calendar = Calendar.getInstance();
-                calendar.add(Calendar.DAY_OF_YEAR, 1);
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                String tomorrowDate = sdf.format(calendar.getTime());
-                saveSelectedDateToPrefs("selectedDate", tomorrowDate);
-            } else {
-                // Jeśli nic nie zaznaczone – usuń filtr daty
-                saveSelectedDateToPrefs("selectedDate", "");
-            }
+            cb.setChecked(savedTags.contains(tag));
+            cb.setButtonTintList(ColorStateList.valueOf(cb.isChecked() ? colorBrown : defaultColor));
 
-            // Start HomeActivity z informacją, żeby pokazać PickupFragment
-            Intent intent = new Intent(FilterActivity.this, HomeActivity.class);
-           // intent.putExtra("showPickupFragment", true);
-            //intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-            finish();
-        });
-
-
-        ImageView arrowback = findViewById(R.id.arrowback);
-        TextView resetbtn = findViewById(R.id.resetbtn);
-
-        CheckBox[] checkBoxes = new CheckBox[]{
-                findViewById(R.id.sweets),
-                findViewById(R.id.fastfoods),
-                findViewById(R.id.meat),
-                findViewById(R.id.meals),
-                findViewById(R.id.vegetables),
-                findViewById(R.id.fruits),
-                findViewById(R.id.mixed),
-                findViewById(R.id.vegetarian),
-                findViewById(R.id.dairy),
-                findViewById(R.id.bakery),
-                findViewById(R.id.liquids),
-                findViewById(R.id.vegan)
-        };
-
-        for (CheckBox cb : checkBoxes) {
             cb.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                if (isChecked) {
-                    cb.setButtonTintList(ColorStateList.valueOf(colorBrown));
-                }else{
-                    cb.setButtonTintList(ColorStateList.valueOf(defaultColor));
-
-                }
+                cb.setButtonTintList(ColorStateList.valueOf(isChecked ? colorBrown : defaultColor));
+              //  saveCheckedTagsToPrefs();
             });
         }
 
-        arrowback.setOnClickListener(v -> {
-            onBackPressed();
-        });
-
-
+        // Reset
         resetbtn.setOnClickListener(v -> {
             for (CheckBox cb : checkBoxes) {
                 cb.setChecked(false);
-                cb.setButtonTintList(ColorStateList.valueOf(defaultColor));
             }
         });
 
+        // Back
+        arrowback.setOnClickListener(v -> onBackPressed());
 
+        // Data
+        final boolean[] todaySelected = {false};
+        final boolean[] tomorrowSelected = {false};
+
+        String selectedDate = prefs.getString("selectedDate", null);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        Calendar calendar = Calendar.getInstance();
+        String todayDate = sdf.format(calendar.getTime());
+        calendar.add(Calendar.DAY_OF_YEAR, 1);
+        String tomorrowDate = sdf.format(calendar.getTime());
+
+        if (selectedDate == null || selectedDate.equals(todayDate)) {
+            todaySelected[0] = true;
+            setFilterButtonActive(todayfltr, colorBrown, defaultColorWhite);
+            setFilterButtonInactive(tomorrowfltr, defaultColorWhite, colorBrown);
+        } else if (selectedDate.equals(tomorrowDate)) {
+            tomorrowSelected[0] = true;
+            setFilterButtonActive(tomorrowfltr, colorBrown, defaultColorWhite);
+            setFilterButtonInactive(todayfltr, defaultColorWhite, colorBrown);
+        }
+
+        todayfltr.setOnClickListener(v -> {
+            todaySelected[0] = true;
+            tomorrowSelected[0] = false;
+            setFilterButtonActive(todayfltr, colorBrown, defaultColorWhite);
+            setFilterButtonInactive(tomorrowfltr, defaultColorWhite, colorBrown);
+        });
+
+        tomorrowfltr.setOnClickListener(v -> {
+            todaySelected[0] = false;
+            tomorrowSelected[0] = true;
+            setFilterButtonActive(tomorrowfltr, colorBrown, defaultColorWhite);
+            setFilterButtonInactive(todayfltr, defaultColorWhite, colorBrown);
+        });
+
+        // Zapisz filtry i wróć do HomeActivity
+        filterbtn.setOnClickListener(v -> {
+            if (todaySelected[0]) {
+                prefs.edit().putString("selectedDate", todayDate).apply();
+            } else if (tomorrowSelected[0]) {
+                prefs.edit().putString("selectedDate", tomorrowDate).apply();
+            } else {
+                prefs.edit().remove("selectedDate").apply();
+            }
+
+            saveCheckedTagsToPrefs();
+
+            startActivity(new Intent(FilterActivity.this, HomeActivity.class));
+            finish();
+        });
+    }
+
+    private void addCheckbox(int id, String tag) {
+        CheckBox cb = findViewById(id);
+        checkboxTagMap.put(cb, tag);
+        checkBoxes.add(cb);
+    }
+
+    private void saveCheckedTagsToPrefs() {
+        Set<String> selected = new HashSet<>();
+        for (Map.Entry<CheckBox, String> entry : checkboxTagMap.entrySet()) {
+            if (entry.getKey().isChecked()) {
+                selected.add(entry.getValue());
+            }
+        }
+        getSharedPreferences("MyPrefs", MODE_PRIVATE)
+                .edit()
+                .putStringSet("selectedChips", selected)
+                .apply();
+        Log.d("selectedtags", "Zapisano tagi: " + selected);
     }
 
     private void setFilterButtonActive(MaterialButton button, int bgColor, int textColor) {
@@ -166,14 +186,4 @@ public class FilterActivity extends AppCompatActivity {
         button.setBackgroundTintList(ColorStateList.valueOf(bgColor));
         button.setTextColor(textColor);
     }
-
-    private void saveSelectedDateToPrefs(String key, String value) {
-        Log.d("rrr", "value : "+ value);
-        getSharedPreferences("MyPrefs", MODE_PRIVATE)
-                .edit()
-                .putString(key, value)
-                .apply();
-    }
-
-
 }

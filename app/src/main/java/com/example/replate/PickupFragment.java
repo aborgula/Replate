@@ -1,5 +1,6 @@
 package com.example.replate;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -9,7 +10,6 @@ import android.Manifest;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,7 +21,9 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Locale;
 
 public class PickupFragment extends Fragment {
@@ -35,7 +37,6 @@ public class PickupFragment extends Fragment {
 
         View root = inflater.inflate(R.layout.fragment_pickup, container, false);
 
-        PickupSharedViewModel viewModel = new ViewModelProvider(requireActivity()).get(PickupSharedViewModel.class);
         TextView textView = root.findViewById(R.id.your_textview_id);
         textView.setPaintFlags(textView.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
 
@@ -46,16 +47,16 @@ public class PickupFragment extends Fragment {
         chosenLocation = root.findViewById(R.id.your_textview_id);
         within = root.findViewById(R.id.within);
 
-        filters.setOnClickListener(v->{
+        filters.setOnClickListener(v -> {
             Intent intent;
             intent = new Intent(getContext(), FilterActivity.class);
             startActivity(intent);
         });
 
-        chooseRange.setOnClickListener(v->{
-                Intent intent;
-                intent = new Intent(getContext(), ChooseLocationRangeActivity.class);
-                startActivity(intent);
+        chooseRange.setOnClickListener(v -> {
+            Intent intent;
+            intent = new Intent(getContext(), ChooseLocationRangeActivity.class);
+            startActivity(intent);
         });
 
         requireActivity().getSupportFragmentManager()
@@ -69,7 +70,7 @@ public class PickupFragment extends Fragment {
             if (chipView instanceof Chip) {
                 Chip chip = (Chip) chipView;
                 chip.setOnCheckedChangeListener((compoundButton, isChecked) -> {
-                    updateSelectedChips(chipGroup, viewModel);
+                    updateSelectedChips(chipGroup); // Zmieniona wersja
                 });
             }
         }
@@ -97,10 +98,25 @@ public class PickupFragment extends Fragment {
             listButton.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.lightgrey));
             listButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.yellow));
         });
+
+        // Załaduj zaznaczone chipy z SharedPreferences i zaznacz je w ChipGroup
+        SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        Set<String> savedChips = prefs.getStringSet("selectedChips", new HashSet<>());
+
+        for (int i = 0; i < chipGroup.getChildCount(); i++) {
+            View chipView = chipGroup.getChildAt(i);
+            if (chipView instanceof Chip) {
+                Chip chip = (Chip) chipView;
+                if (savedChips.contains(chip.getText().toString())) {
+                    chip.setChecked(true);
+                }
+            }
+        }
+
         return root;
     }
 
-    private void updateSelectedChips(ChipGroup chipGroup, PickupSharedViewModel viewModel) {
+    private void updateSelectedChips(ChipGroup chipGroup) {
         List<String> selectedChips = new ArrayList<>();
         for (int i = 0; i < chipGroup.getChildCount(); i++) {
             View chipView = chipGroup.getChildAt(i);
@@ -111,12 +127,23 @@ public class PickupFragment extends Fragment {
                 }
             }
         }
-        Log.d("chips", "All selected chips: " + selectedChips);
-        viewModel.setSelectedChips(selectedChips);
+
+        // Zapisz do MyPrefs
+        SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putStringSet("selectedChips", new HashSet<>(selectedChips));
+        editor.apply();
+
+        // Odśwież FragmentMap jeśli aktywny
+        Fragment currentFragment = requireActivity().getSupportFragmentManager().findFragmentById(R.id.listormap);
+        if (currentFragment instanceof FragmentMap) {
+            ((FragmentMap) currentFragment).reloadMarkers();
+        }
     }
 
     @Override
     public void onResume() {
+
         super.onResume();
 
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", getContext().MODE_PRIVATE);
@@ -142,6 +169,15 @@ public class PickupFragment extends Fragment {
                 chosenLocation.setText("App doesn't have permission to access your location.");
             }
         }
-    }
 
+        Fragment fragment = getChildFragmentManager().findFragmentById(R.id.map_fragment);
+
+        if (fragment instanceof FragmentMap) {
+            ((FragmentMap) fragment).reloadMarkers();
+            Log.d("selectedtags", "w pickupfragment ");
+        }
+    }
 }
+
+
+ 
