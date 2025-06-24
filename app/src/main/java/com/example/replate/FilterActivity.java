@@ -57,14 +57,14 @@ public class FilterActivity extends AppCompatActivity {
         int endTime = prefs.getInt("endTimeMinutes", 1439);
         timeSlider.setValues((float) startTime, (float) endTime);
 
+        // Tymczasowe zmienne do przechowania wybranych wartości
+        final int[] tempStartTime = {startTime};
+        final int[] tempEndTime = {endTime};
+
         timeSlider.addOnChangeListener((slider, value, fromUser) -> {
             List<Float> values = slider.getValues();
-            int startMin = Math.round(values.get(0));
-            int endMin = Math.round(values.get(1));
-            prefs.edit()
-                    .putInt("startTimeMinutes", startMin)
-                    .putInt("endTimeMinutes", endMin)
-                    .apply();
+            tempStartTime[0] = Math.round(values.get(0));
+            tempEndTime[0] = Math.round(values.get(1));
         });
 
         // Checkboxy
@@ -95,13 +95,6 @@ public class FilterActivity extends AppCompatActivity {
             });
         }
 
-        // Reset
-        resetbtn.setOnClickListener(v -> {
-            for (CheckBox cb : checkBoxes) {
-                cb.setChecked(false);
-            }
-        });
-
         // Back
         arrowback.setOnClickListener(v -> onBackPressed());
 
@@ -126,6 +119,26 @@ public class FilterActivity extends AppCompatActivity {
             setFilterButtonInactive(todayfltr, defaultColorWhite, colorBrown);
         }
 
+        // Reset
+        resetbtn.setOnClickListener(v -> {
+            // Odznacz wszystkie checkboxy i zmień kolor
+            for (CheckBox cb : checkBoxes) {
+                cb.setChecked(false);
+                cb.setButtonTintList(ColorStateList.valueOf(defaultColor));
+            }
+
+            // Reset godzin na domyślne (00:00 - 23:59)
+            timeSlider.setValues(0f, 1439f);
+            tempStartTime[0] = 0;
+            tempEndTime[0] = 1439;
+
+            // Ustaw dzień na "today"
+            todaySelected[0] = true;
+            tomorrowSelected[0] = false;
+            setFilterButtonActive(todayfltr, colorBrown, defaultColorWhite);
+            setFilterButtonInactive(tomorrowfltr, defaultColorWhite, colorBrown);
+        });
+
         todayfltr.setOnClickListener(v -> {
             todaySelected[0] = true;
             tomorrowSelected[0] = false;
@@ -142,6 +155,7 @@ public class FilterActivity extends AppCompatActivity {
 
         // Zapisz filtry i wróć do HomeActivity
         filterbtn.setOnClickListener(v -> {
+            // Zapisz datę
             if (todaySelected[0]) {
                 prefs.edit().putString("selectedDate", todayDate).apply();
             } else if (tomorrowSelected[0]) {
@@ -150,8 +164,16 @@ public class FilterActivity extends AppCompatActivity {
                 prefs.edit().remove("selectedDate").apply();
             }
 
+            // Zapisz tagi
             saveCheckedTagsToPrefs();
 
+            // Zapisz godzinę
+            prefs.edit()
+                    .putInt("startTimeMinutes", tempStartTime[0])
+                    .putInt("endTimeMinutes", tempEndTime[0])
+                    .apply();
+
+            // Powrót
             startActivity(new Intent(FilterActivity.this, HomeActivity.class));
             finish();
         });

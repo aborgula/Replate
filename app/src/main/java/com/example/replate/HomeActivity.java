@@ -224,6 +224,7 @@ public class HomeActivity extends AppCompatActivity {
             addressToPlaceIdMap.clear();
             selectedParcelImageUri = null;
             phoneNumber = "";
+            price = 0.0;
         });
     }
 
@@ -300,6 +301,7 @@ public class HomeActivity extends AppCompatActivity {
             addressToPlaceIdMap.clear();
             selectedParcelImageUri = null;
             phoneNumber = "";
+            price = 0.0;
             selectedDay = "today";
         });
     }
@@ -366,6 +368,7 @@ public class HomeActivity extends AppCompatActivity {
             addressToPlaceIdMap.clear();
             selectedParcelImageUri = null;
             phoneNumber = "";
+            price = 0.0;
             selectedDay = "today";
         });
 
@@ -620,6 +623,7 @@ public class HomeActivity extends AppCompatActivity {
             endTime = "";
             selectedFullAddress = "";
             selectedPlaceId = "";
+            price = 0.0;
             addressToPlaceIdMap.clear();
             selectedParcelImageUri = null;
             phoneNumber = "";
@@ -841,6 +845,7 @@ imageRef.putBytes(imageBytes)
 // parcelData.put("imageUrl", downloadUri.toString()); // brak zdjęcia
             parcelData.put("userId", userId);
             parcelData.put("phone", phoneNumber);
+            parcelData.put("price", price);
             parcelData.put("timestamp", FieldValue.serverTimestamp());
 
             db.collection("parcels")
@@ -859,6 +864,7 @@ imageRef.putBytes(imageBytes)
                         addressToPlaceIdMap.clear();
                         selectedParcelImageUri = null;
                         phoneNumber = "";
+                        price = 0.0;
                         selectedDay = "today";
                         dialog.dismiss();
                     })
@@ -881,6 +887,7 @@ imageRef.putBytes(imageBytes)
             addressToPlaceIdMap.clear();
             selectedParcelImageUri = null;
             phoneNumber = "";
+            price = 0.0;
             selectedDay = "today";
         });
     }
