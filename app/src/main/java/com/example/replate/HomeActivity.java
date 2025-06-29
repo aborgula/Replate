@@ -197,6 +197,7 @@ public class HomeActivity extends AppCompatActivity {
             selectedParcelImageUri = null;
             phoneNumber = "";
             selectedDay = "today";
+            dialog.dismiss();
         });
 
         next.setOnClickListener(v->{
@@ -835,8 +836,8 @@ imageRef.putBytes(imageBytes)
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
             dateToSave = sdf.format(calendar.getTime());
             parcelData.put("date", dateToSave);
-            parcelData.put("title", title);
-            parcelData.put("description", description);
+            parcelData.put("title", capitalizeFirstLetter(title.trim()));
+            parcelData.put("description", capitalizeFirstLetter(description.trim()));
             parcelData.put("tags", selectedTags);
             parcelData.put("startTime", startTime);
             parcelData.put("endTime", endTime);
@@ -847,12 +848,20 @@ imageRef.putBytes(imageBytes)
             parcelData.put("phone", phoneNumber);
             parcelData.put("price", price);
             parcelData.put("timestamp", FieldValue.serverTimestamp());
+            parcelData.put("status", "active");
 
             db.collection("parcels")
                     .add(parcelData)
                     .addOnSuccessListener(documentReference -> {
                         progressDialog.dismiss();
                         Toast.makeText(this, "Parcel added!", Toast.LENGTH_SHORT).show();
+                        String parcelId = documentReference.getId();
+
+                        db.collection("users").document(userId)
+                                .update("parcelIds", FieldValue.arrayUnion(parcelId))
+                                .addOnSuccessListener(aVoid -> Log.d("Firestore", "Parcel ID added to user"))
+                                .addOnFailureListener(e -> Log.e("Firestore", "Failed to update user: " + e.getMessage()));
+
                         // Resetuj dane
                         title = "";
                         description = "";
@@ -985,5 +994,10 @@ imageRef.putBytes(imageBytes)
             button.setBackgroundTintList(ColorStateList.valueOf(Color.WHITE));
             button.setTextColor(ContextCompat.getColor(this, R.color.black));
         }
+    }
+
+    private String capitalizeFirstLetter(String text) {
+        if (text == null || text.isEmpty()) return text;
+        return text.substring(0, 1).toUpperCase() + text.substring(1);
     }
 }

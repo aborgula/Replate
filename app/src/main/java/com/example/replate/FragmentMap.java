@@ -151,6 +151,7 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
         String selectedDate = prefs.getString("selectedDate", null); // może być null, jeśli nie wybrano filtru
 
         db.collection("parcels")
+                .whereEqualTo("status", "active")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {

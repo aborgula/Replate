@@ -1,6 +1,7 @@
 package com.example.replate;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
@@ -31,6 +32,14 @@ public class FragmentList extends Fragment {
     private LinearLayout parcelContainer;
     private LayoutInflater layoutInflater;
 
+    // Launcher przekazywany z PickupFragment
+    private androidx.activity.result.ActivityResultLauncher<Intent> parcelLauncher;
+
+    // Pozwala PickupFragment przekazać parcelLauncher
+    public void setParcelLauncher(androidx.activity.result.ActivityResultLauncher<Intent> launcher) {
+        this.parcelLauncher = launcher;
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -47,6 +56,11 @@ public class FragmentList extends Fragment {
         return view;
     }
 
+    // Publiczna metoda do ponownego załadowania
+    public void loadFilteredParcels() {
+        loadParcelsAndDisplay();
+    }
+
     private void loadParcelsAndDisplay() {
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         String selectedDate = prefs.getString("selectedDate", null);
@@ -54,6 +68,7 @@ public class FragmentList extends Fragment {
         int filterEnd = prefs.getInt("endTimeMinutes", 1439);
 
         db.collection("parcels")
+                .whereEqualTo("status", "active")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     parcelContainer.removeAllViews();
@@ -104,19 +119,36 @@ public class FragmentList extends Fragment {
                             ImageView image = parcelView.findViewById(R.id.parcelImage);
 
                             title.setText(document.getString("title"));
-                            time.setText("Pick up between " + document.getString("startTime") + " - " + document.getString("endTime"));
                             Double priceValue = document.getDouble("price");
+                            String startTime = document.getString("startTime");
+                            String endTime = document.getString("endTime");
+
+                            String whenText = prefs.getString("when", "Today");
+                            time.setText(whenText + ", " + startTime + " - " + endTime);
+
                             if (priceValue != null && priceValue > 0) {
                                 price.setText(String.format("%.2f zł", priceValue));
                             } else {
                                 price.setText("Free");
                             }
+
                             rating.setText(String.valueOf(document.getDouble("rating"))); // upewnij się, że masz to pole
 
-                            // Jeśli masz obrazki w Storage — możesz je ładować np. przez Glide
                             // Glide.with(this).load(document.getString("imageUrl")).into(image);
 
                             parcelContainer.addView(parcelView);
+
+                            String documentId = document.getId();
+
+                            parcelView.setOnClickListener(v -> {
+                                Intent intent = new Intent(requireContext(), ParcelActivity.class);
+                                intent.putExtra("parcelId", documentId);
+                                if (parcelLauncher != null) {
+                                    parcelLauncher.launch(intent);
+                                } else {
+                                    startActivity(intent); // fallback
+                                }
+                            });
                         }
                     }
                 })

@@ -1,9 +1,244 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ParcelActivity">
+    android:layout_height="match_parent">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- Zdjęcie w tle -->
+    <ImageView
+        android:id="@+id/backgroundImage"
+        android:layout_width="match_parent"
+        android:layout_height="340dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/photo_bakery" />
+
+    <!-- Ikony w rogach zdjęcia -->
+    <!-- Biała część z zaokrąglonymi rogami -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="330dp"
+        android:padding="16dp">
+
+        <!-- Lewy górny róg - okrągły przycisk -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="start|top"
+            app:cardBackgroundColor="@android:color/white"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:strokeWidth="0dp">
+
+            <ImageButton
+                android:id="@+id/backButton"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:contentDescription="Back"
+                android:src="@drawable/ic_arrow_back" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Prawy górny róg - np. ikona serca -->
+        <ImageButton
+            android:id="@+id/favButton"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="end|top"
+            android:background="@drawable/circle_background"
+            android:backgroundTint="#3CFFFFFF"
+            android:contentDescription="Favorite"
+            android:padding="8dp"
+            android:src="@drawable/ic_favourite"
+            app:tint="#F8F8F8" />
+
+        <!-- Cena w prawym dolnym rogu -->
+        <TextView
+            android:id="@+id/priceTag"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/rounded_rect_white"
+            android:backgroundTint="@color/yellow"
+            android:paddingStart="12dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="6dp"
+            android:layout_marginBottom="13dp"
+            android:text="5,99 zł"
+            android:textColor="@android:color/black"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+    </FrameLayout>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginTop="315dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="8dp"
+        android:backgroundTint="@android:color/white">
+
+        <ScrollView
+            android:layout_above="@id/stickyFooter"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="65dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp">
+
+                <!-- Nagłówek -->
+                <TextView
+                    android:id="@+id/title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Piekarnia Klich Plac Łazienny"
+                    android:textSize="24dp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/black"
+                    android:layout_marginBottom="8dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="24dp">
+
+                    <TextView
+                        android:gravity="center_vertical"
+                        android:id="@+id/ratings"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=" 4,9"
+                        android:drawableLeft="@drawable/ic_star"
+                        android:drawablePadding="6dp"
+                        android:drawableTint="@color/green"
+                        android:textSize="16dp"
+                        android:layout_marginEnd="26dp" />
+                    <TextView
+                        android:gravity="center_vertical"
+                        android:id="@+id/time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:drawableLeft="@drawable/ic_time"
+                        android:drawablePadding="6dp"
+                        android:drawableTint="@color/brown"
+                        android:text="Tomorrow, 06:00 - 06:30"
+                        android:textSize="16dp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/rescue"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="What will you rescue?"
+                    android:textSize="21dp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/black"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:id="@+id/description"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🥖🍞🥨 W Piekarni Klich uratujesz pieczywo, bagietki, słodkie wypieki..."
+                    android:textSize="15dp"
+                    android:textColor="@android:color/black"
+                    android:lineSpacingExtra="4dp"
+                    android:layout_marginBottom="32dp" />
+                <androidx.appcompat.widget.LinearLayoutCompat
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <HorizontalScrollView
+                        android:id="@+id/tags"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/tagContainer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal" />
+                    </HorizontalScrollView>
+
+                </androidx.appcompat.widget.LinearLayoutCompat>
+                <fragment
+                    android:id="@+id/mapFragment"
+                    android:layout_width="match_parent"
+                    android:layout_marginHorizontal="5dp"
+                    android:layout_height="180dp"
+                    android:layout_gravity="bottom"
+                    android:layout_marginTop="20dp"
+                    android:name="com.google.android.gms.maps.SupportMapFragment" />
+
+                <LinearLayout
+                    android:layout_marginTop="15dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:padding="8dp">
+
+                    <ImageView
+                        android:id="@+id/userAvatar"
+                        android:layout_width="70dp"
+                        android:layout_height="70dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/image_profile"
+                        android:contentDescription="User Avatar"
+                        android:background="@drawable/circle_background"
+                        android:clipToOutline="true" />
+
+                    <TextView
+                        android:id="@+id/userLogin"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Username"
+                        android:textSize="23dp"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/black"
+                        android:layout_marginStart="17dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Sticky footer - przyklejony na dole -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/stickyFooter"
+        android:layout_width="match_parent"
+        android:layout_height="65dp"
+        android:layout_alignParentBottom="true"
+        app:cardElevation="8dp"
+        >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/rescueButton"
+                android:layout_width="150dp"
+                android:layout_height="wrap_content"
+                android:text="Rescue"
+                android:backgroundTint="@color/yellow"
+                android:textColor="@android:color/black"
+                android:textStyle="bold"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</RelativeLayout>

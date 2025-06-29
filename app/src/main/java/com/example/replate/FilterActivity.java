@@ -158,10 +158,13 @@ public class FilterActivity extends AppCompatActivity {
             // Zapisz datę
             if (todaySelected[0]) {
                 prefs.edit().putString("selectedDate", todayDate).apply();
+                prefs.edit().putString("when", "Today").apply();
             } else if (tomorrowSelected[0]) {
                 prefs.edit().putString("selectedDate", tomorrowDate).apply();
+                prefs.edit().putString("when", "Tomorrow").apply();
             } else {
                 prefs.edit().remove("selectedDate").apply();
+                prefs.edit().remove("when").apply();
             }
 
             // Zapisz tagi

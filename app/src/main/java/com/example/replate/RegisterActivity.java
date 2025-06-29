@@ -37,6 +37,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -241,6 +242,9 @@ public class RegisterActivity extends AppCompatActivity {
                             Map<String, Object> userData = new HashMap<>();
                             userData.put("login", loginValue);
                             userData.put("email", email);
+                            userData.put("parcelIds", new ArrayList<String>());
+                            userData.put("likedUsers", new ArrayList<String>());
+
 
                             db.collection("users").document(userId)
                                     .set(userData)

@@ -7,6 +7,8 @@ import android.content.pm.PackageManager;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.Manifest;
+
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -20,22 +22,50 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Locale;
+
+// ... (importy bez zmian)
 
 public class PickupFragment extends Fragment {
 
     private TextView listButton, mapButton, chosenLocation, within;
     private LinearLayout filters, chooseRange;
 
+    private final androidx.activity.result.ActivityResultLauncher<Intent> parcelLauncher =
+            registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        if (result.getResultCode() == AppCompatActivity.RESULT_OK) {
+                            boolean wasDeleted = result.getData() != null &&
+                                    result.getData().getBooleanExtra("deleted", false);
+
+                            if (wasDeleted) {
+                                Fragment current = requireActivity()
+                                        .getSupportFragmentManager().findFragmentById(R.id.listormap);
+                                if (current instanceof FragmentList) {
+                                    ((FragmentList) current).loadFilteredParcels();
+                                } else if (current instanceof FragmentMap) {
+                                    ((FragmentMap) current).reloadMarkers();
+                                }
+                            }
+                        }
+                    });
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
         View root = inflater.inflate(R.layout.fragment_pickup, container, false);
+
+        deleteExpiredParcels();
 
         TextView textView = root.findViewById(R.id.your_textview_id);
         textView.setPaintFlags(textView.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
@@ -48,20 +78,22 @@ public class PickupFragment extends Fragment {
         within = root.findViewById(R.id.within);
 
         filters.setOnClickListener(v -> {
-            Intent intent;
-            intent = new Intent(getContext(), FilterActivity.class);
+            Intent intent = new Intent(getContext(), FilterActivity.class);
             startActivity(intent);
         });
 
         chooseRange.setOnClickListener(v -> {
-            Intent intent;
-            intent = new Intent(getContext(), ChooseLocationRangeActivity.class);
+            Intent intent = new Intent(getContext(), ChooseLocationRangeActivity.class);
             startActivity(intent);
         });
 
+        // 🔽 ZMIANA: przekazujemy parcelLauncher do FragmentList
+        FragmentList initialListFragment = new FragmentList();
+        initialListFragment.setParcelLauncher(parcelLauncher);
+
         requireActivity().getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.listormap, new FragmentList())
+                .replace(R.id.listormap, initialListFragment)
                 .commit();
 
         ChipGroup chipGroup = root.findViewById(R.id.chipGroup);
@@ -70,15 +102,19 @@ public class PickupFragment extends Fragment {
             if (chipView instanceof Chip) {
                 Chip chip = (Chip) chipView;
                 chip.setOnCheckedChangeListener((compoundButton, isChecked) -> {
-                    updateSelectedChips(chipGroup); // Zmieniona wersja
+                    updateSelectedChips(chipGroup);
                 });
             }
         }
 
         listButton.setOnClickListener(v -> {
+            // 🔽 ZMIANA: nowy fragment + przekazanie parcelLauncher
+            FragmentList fragmentList = new FragmentList();
+            fragmentList.setParcelLauncher(parcelLauncher);
+
             requireActivity().getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.listormap, new FragmentList())
+                    .replace(R.id.listormap, fragmentList)
                     .commit();
 
             listButton.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.yellow));
@@ -99,7 +135,6 @@ public class PickupFragment extends Fragment {
             listButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.yellow));
         });
 
-        // Załaduj zaznaczone chipy z SharedPreferences i zaznacz je w ChipGroup
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         Set<String> savedChips = prefs.getStringSet("selectedChips", new HashSet<>());
 
@@ -128,13 +163,11 @@ public class PickupFragment extends Fragment {
             }
         }
 
-        // Zapisz do MyPrefs
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putStringSet("selectedChips", new HashSet<>(selectedChips));
         editor.apply();
 
-        // Odśwież FragmentMap jeśli aktywny
         Fragment currentFragment = requireActivity().getSupportFragmentManager().findFragmentById(R.id.listormap);
         if (currentFragment instanceof FragmentMap) {
             ((FragmentMap) currentFragment).reloadMarkers();
@@ -143,7 +176,6 @@ public class PickupFragment extends Fragment {
 
     @Override
     public void onResume() {
-
         super.onResume();
 
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", getContext().MODE_PRIVATE);
@@ -171,13 +203,31 @@ public class PickupFragment extends Fragment {
         }
 
         Fragment fragment = getChildFragmentManager().findFragmentById(R.id.map_fragment);
-
         if (fragment instanceof FragmentMap) {
             ((FragmentMap) fragment).reloadMarkers();
             Log.d("selectedtags", "w pickupfragment ");
         }
     }
+
+    private void deleteExpiredParcels() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                .format(Calendar.getInstance().getTime());
+
+        db.collection("parcels")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        String parcelDate = doc.getString("date");
+
+                        if (parcelDate != null && parcelDate.compareTo(today) < 0) {
+                            db.collection("parcels").document(doc.getId())
+                                    .delete()
+                                    .addOnSuccessListener(aVoid -> Log.d("DeleteParcel", "Deleted expired parcel: " + doc.getId()))
+                                    .addOnFailureListener(e -> Log.e("DeleteParcel", "Failed to delete: " + doc.getId(), e));
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> Log.e("DeleteParcel", "Failed to fetch parcels", e));
+    }
 }
-
-
- 
