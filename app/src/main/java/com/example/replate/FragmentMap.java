@@ -2,6 +2,7 @@ package com.example.replate;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -11,6 +12,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.gms.maps.model.LatLng;
@@ -29,6 +32,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
@@ -88,6 +92,16 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
     public void onMapReady(@NonNull GoogleMap map) {
         googleMap = map;
 
+        googleMap.setOnMarkerClickListener(marker -> {
+            String clickedParcelId = (String) marker.getTag();
+            if (clickedParcelId != null) {
+                Intent intent = new Intent(requireContext(), ParcelActivity.class);
+                intent.putExtra("parcelId", clickedParcelId);
+                startActivity(intent);
+            }
+            return false;
+        });
+
         if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(requireActivity(),
@@ -96,17 +110,10 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
             return;
         }
 
-        // Pobieranie z SharedPreferences
+        // SharedPreferences
         String lastPlaceId = requireContext()
                 .getSharedPreferences("MyPrefs", 0)
                 .getString("lastPlaceId", null);
-
-        if (lastPlaceId != null) {
-            Log.d("local", lastPlaceId);
-        } else {
-            Log.d("local", "lastPlaceId is null");
-        }
-
 
         if (lastPlaceId != null && !lastPlaceId.isEmpty()) {
             List<Place.Field> placeFields = Arrays.asList(Place.Field.LAT_LNG);
@@ -117,18 +124,18 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
                 LatLng latLng = place.getLatLng();
                 if (latLng != null) {
                     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 12));
-                    googleMap.addMarker(new MarkerOptions().position(latLng).title("Searched Location"));
                 }
             }).addOnFailureListener(exception -> {
                 Log.e("FragmentMap", "Failed to fetch lastPlaceId: " + exception.getMessage());
-                fallbackToCurrentLocation(); // Jeśli nie uda się pobrać – przechodzimy do lokalizacji urządzenia
+                fallbackToCurrentLocation();
             });
         } else {
-            fallbackToCurrentLocation(); // Jeśli brak placeId – przechodzimy do lokalizacji urządzenia
+            fallbackToCurrentLocation();
         }
 
-        loadParcelsAndShowMarkers();
+        loadParcelsAndShowMarkers();  // 🔁 to ładuje paczki i przypisuje parcelId do markerów
     }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -144,6 +151,8 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
     }
 
     private void loadParcelsAndShowMarkers() {
+
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         if (googleMap == null) return;
 
         // Odczytaj filtr daty z SharedPreferences
@@ -155,6 +164,12 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        String creatorId = document.getString("userId");
+                        // Pomijamy paczki użytkownika
+                        if (creatorId != null && creatorId.equals(currentUserId)) {
+                            continue;
+                        }
+
                         List<String> tags = (List<String>) document.get("tags");
                         if (tags == null) tags = new ArrayList<>();
 
@@ -204,7 +219,8 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
                             String title = document.getString("title");
 
                             if (placeId != null && !placeId.isEmpty()) {
-                                fetchPlaceAndAddMarker(placeId, title);
+                                String parcelId = document.getId();
+                                fetchPlaceAndAddMarker(placeId, title, document.getId());
                             }
                         }
                     }
@@ -215,7 +231,7 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
 
     }
 
-    private void fetchPlaceAndAddMarker(String placeId, String title) {
+    private void fetchPlaceAndAddMarker(String placeId, String title, String parcelId) {
         List<Place.Field> placeFields = Arrays.asList(Place.Field.LAT_LNG);
 
         FetchPlaceRequest request = FetchPlaceRequest.newInstance(placeId, placeFields);
@@ -224,7 +240,8 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
             Place place = response.getPlace();
             LatLng latLng = place.getLatLng();
             if (latLng != null && googleMap != null) {
-                googleMap.addMarker(new MarkerOptions().position(latLng).title(title));
+                Marker marker = googleMap.addMarker(new MarkerOptions().position(latLng).title(title));
+                marker.setTag(parcelId); // 👈 przypisanie parcelId
             }
         }).addOnFailureListener(exception -> {
             Log.e("FragmentMap", "Place not found: " + exception.getMessage());

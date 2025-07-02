@@ -205,7 +205,6 @@ public class PickupFragment extends Fragment {
         Fragment fragment = getChildFragmentManager().findFragmentById(R.id.map_fragment);
         if (fragment instanceof FragmentMap) {
             ((FragmentMap) fragment).reloadMarkers();
-            Log.d("selectedtags", "w pickupfragment ");
         }
     }
 

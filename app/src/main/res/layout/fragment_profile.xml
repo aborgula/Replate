@@ -63,7 +63,7 @@
 
 
     <androidx.cardview.widget.CardView
-        android:id="@+id/logoutbtn"
+        android:id="@+id/packagesbtn"
         android:layout_gravity="center_horizontal"
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -72,11 +72,83 @@
         app:cardElevation="8dp"
         app:cardCornerRadius="15dp"
         android:layout_marginTop="33dp"
-        android:layout_marginBottom="23dp"
         app:cardBackgroundColor="@android:color/transparent"
         >
 
         <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:backgroundTint="@color/green"
+            android:background="@drawable/logout_btn"
+            android:paddingVertical="10dp">
+
+            <TextView
+                android:layout_gravity="center_horizontal"
+                android:layout_width="wrap_content"
+                android:textAlignment="center"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="PACKAGES"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
+
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/reviewsbtn"
+        android:layout_gravity="center_horizontal"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        app:cardElevation="8dp"
+        app:cardCornerRadius="15dp"
+        android:layout_marginTop="13dp"
+        app:cardBackgroundColor="@android:color/transparent"
+        >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:backgroundTint="@color/green"
+            android:background="@drawable/logout_btn"
+            android:paddingVertical="10dp">
+
+            <TextView
+                android:layout_gravity="center_horizontal"
+                android:layout_width="wrap_content"
+                android:textAlignment="center"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="REVIEWS"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
+
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/settingsbtn"
+        android:layout_gravity="center_horizontal"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        app:cardElevation="8dp"
+        app:cardCornerRadius="15dp"
+        android:layout_marginTop="13dp"
+        app:cardBackgroundColor="@android:color/transparent"
+        >
+
+        <LinearLayout
+            android:backgroundTint="@color/gold"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -90,7 +162,7 @@
                 android:textAlignment="center"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:text="LOGOUT"
+                android:text="SETTINGS"
                 android:textStyle="bold"
                 android:textSize="16sp"/>
 
@@ -98,5 +170,42 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/logoutbtn"
+        android:layout_gravity="center_horizontal"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        app:cardElevation="8dp"
+        app:cardCornerRadius="15dp"
+        android:layout_marginTop="13dp"
+        android:layout_marginBottom="23dp"
+        app:cardBackgroundColor="@android:color/transparent"
+        >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/button_brown_border"
+            android:paddingVertical="10dp">
+
+            <TextView
+                android:textColor="@color/brown"
+                android:layout_gravity="center_horizontal"
+                android:layout_width="wrap_content"
+                android:textAlignment="center"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="LOGOUT"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
+
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
 
 </LinearLayout>

@@ -28,6 +28,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import java.io.IOException;
 import java.util.List;
@@ -111,65 +112,9 @@ public class ParcelActivity extends AppCompatActivity {
                             Button rescueButton = findViewById(R.id.rescueButton);
                             Log.d("liked", "curruserid: " + currentUserId + " creatorid " + creatorId);
 
-                            if (currentUserId != null && currentUserId.equals(creatorId)) {
-                                // Paczka należy do zalogowanego użytkownika – pokaż jako "Cancel"
-                                // Paczka innego użytkownika – standardowe "Rescue"
-                                favButton.setVisibility(View.VISIBLE);
-                                rescueButton.setText("Rescue");
-                                rescueButton.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.yellow));
-                                rescueButton.setTextColor(ContextCompat.getColor(this, android.R.color.black));
-                                stickyFooter.setCardBackgroundColor(Color.parseColor("#FDFFFADA"));
-                                Log.d("liked", "curruserid: " + currentUserId + " creatorid " + creatorId);
-
-                                // Dodaj ulubionego użytkownika po kliknięciu favButton
-                                if (currentUserId != null && creatorId != null && !currentUserId.equals(creatorId)) {
-                                    FirebaseFirestore.getInstance().collection("users").document(currentUserId)
-                                            .get()
-                                            .addOnSuccessListener(userSnapshot -> {
-                                                List<String> likedUsers = (List<String>) userSnapshot.get("likedUsers");
-                                                isLiked = likedUsers != null && likedUsers.contains(creatorId);
-
-                                                // Ustaw ikonę na start
-                                                if (isLiked) {
-                                                    favButton.setImageResource(R.drawable.ic_favouritefull);
-                                                    favButton.setColorFilter(Color.parseColor("#F40F0F"));
-                                                } else {
-                                                    favButton.setImageResource(R.drawable.ic_favourite);
-                                                    favButton.setColorFilter(Color.parseColor("#F8F8F8"));
-                                                }
-
-                                                favButton.setOnClickListener(v -> {
-                                                    Log.d("liked", "isliked: " + isLiked);
-
-                                                    FirebaseFirestore dbUpdate = FirebaseFirestore.getInstance();
-                                                    if (isLiked) {
-                                                        Log.d("liked", "isliked: " + isLiked);
-                                                        // Usuń z ulubionych
-                                                        dbUpdate.collection("users").document(currentUserId)
-                                                                .update("likedUsers", com.google.firebase.firestore.FieldValue.arrayRemove(creatorId))
-                                                                .addOnSuccessListener(unused -> {
-                                                                    Toast.makeText(this, "Removed from favorites", Toast.LENGTH_SHORT).show();
-                                                                    favButton.setImageResource(R.drawable.ic_favourite);
-                                                                    favButton.setColorFilter(Color.parseColor("#F8F8F8"));
-                                                                });
-                                                    } else {
-                                                        Log.d("liked", "isnotliked: " + isLiked);
-
-                                                        // Dodaj do ulubionych
-                                                        dbUpdate.collection("users").document(currentUserId)
-                                                                .update("likedUsers", com.google.firebase.firestore.FieldValue.arrayUnion(creatorId))
-                                                                .addOnSuccessListener(unused -> {
-                                                                    Toast.makeText(this, "Added to favorites", Toast.LENGTH_SHORT).show();
-                                                                    favButton.setImageResource(R.drawable.ic_favouritefull);
-                                                                    favButton.setColorFilter(Color.parseColor("#F40F0F"));
-                                                                });
-                                                    }
-                                                    // Odwróć isLiked (lokalnie)
-                                                    isLiked = !isLiked;
-                                                });
-                                            });
-                                }
-
+                            if (currentUserId != null && creatorId != null && currentUserId.equals(creatorId)) {
+                                // Paczka należy do aktualnego użytkownika
+                                favButton.setVisibility(View.GONE);
                                 stickyFooter.setCardBackgroundColor(Color.parseColor("#FDFFDADD"));
                                 rescueButton.setText("Delete");
                                 rescueButton.setBackgroundTintList(ContextCompat.getColorStateList(this, android.R.color.holo_red_dark));
@@ -190,49 +135,61 @@ public class ParcelActivity extends AppCompatActivity {
                                             );
                                 });
 
-                            } else {
-                                // Paczka innego użytkownika – standardowe "Rescue"
+                            } else if (currentUserId != null && creatorId != null) {
+                                // Paczka innego użytkownika — pokaż "Rescue" i serduszko
                                 favButton.setVisibility(View.VISIBLE);
-                                favButton.setOnClickListener(v -> {
-                                    Log.d("liked", "isliked: " + isLiked);
-
-                                    FirebaseFirestore dbUpdate = FirebaseFirestore.getInstance();
-                                    if (isLiked) {
-                                        Log.d("liked", "isliked: " + isLiked);
-                                        // Usuń z ulubionych
-                                        dbUpdate.collection("users").document(currentUserId)
-                                                .update("likedUsers", com.google.firebase.firestore.FieldValue.arrayRemove(creatorId))
-                                                .addOnSuccessListener(unused -> {
-                                                    Toast.makeText(this, "Removed from favorites", Toast.LENGTH_SHORT).show();
-                                                    favButton.setImageResource(R.drawable.ic_favourite);
-                                                    favButton.setColorFilter(Color.parseColor("#F8F8F8"));
-                                                });
-                                    } else {
-                                        Log.d("liked", "isnotliked: " + isLiked);
-
-                                        // Dodaj do ulubionych
-                                        dbUpdate.collection("users").document(currentUserId)
-                                                .update("likedUsers", com.google.firebase.firestore.FieldValue.arrayUnion(creatorId))
-                                                .addOnSuccessListener(unused -> {
-                                                    Toast.makeText(this, "Added to favorites", Toast.LENGTH_SHORT).show();
-                                                    favButton.setImageResource(R.drawable.ic_favouritefull);
-                                                    favButton.setColorFilter(Color.parseColor("#F40F0F"));
-                                                });
-                                    }
-                                    // Odwróć isLiked (lokalnie)
-                                    isLiked = !isLiked;
-                                });
-
+                                stickyFooter.setCardBackgroundColor(Color.parseColor("#FDFFFADA"));
                                 rescueButton.setText("Rescue");
                                 rescueButton.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.yellow));
                                 rescueButton.setTextColor(ContextCompat.getColor(this, android.R.color.black));
-                                stickyFooter.setCardBackgroundColor(Color.parseColor("#FDFFFADA"));
-                                // Tu możesz dodać akcję rezerwacji paczki
+
+                                // Sprawdzenie, czy polubiono już tego twórcę
+                                FirebaseFirestore.getInstance().collection("users").document(currentUserId)
+                                        .get()
+                                        .addOnSuccessListener(userSnapshot -> {
+                                            List<String> likedUsers = (List<String>) userSnapshot.get("likedUsers");
+                                            isLiked = likedUsers != null && likedUsers.contains(creatorId);
+
+                                            // Ikona serduszka na start
+                                            if (isLiked) {
+                                                favButton.setImageResource(R.drawable.ic_favouritefull);
+                                                favButton.setColorFilter(Color.parseColor("#F40F0F"));
+                                            } else {
+                                                favButton.setImageResource(R.drawable.ic_favourite);
+                                                favButton.setColorFilter(Color.parseColor("#F8F8F8"));
+                                            }
+
+                                            // Obsługa kliknięcia w serduszko
+                                            favButton.setOnClickListener(v -> {
+                                                FirebaseFirestore dbUpdate = FirebaseFirestore.getInstance();
+                                                if (isLiked) {
+                                                    dbUpdate.collection("users").document(currentUserId)
+                                                            .update("likedUsers", FieldValue.arrayRemove(creatorId))
+                                                            .addOnSuccessListener(unused -> {
+                                                                Toast.makeText(this, "Removed from favorites", Toast.LENGTH_SHORT).show();
+                                                                favButton.setImageResource(R.drawable.ic_favourite);
+                                                                favButton.setColorFilter(Color.parseColor("#F8F8F8"));
+                                                                isLiked = false;
+                                                            });
+                                                } else {
+                                                    dbUpdate.collection("users").document(currentUserId)
+                                                            .update("likedUsers", FieldValue.arrayUnion(creatorId))
+                                                            .addOnSuccessListener(unused -> {
+                                                                Toast.makeText(this, "Added to favorites", Toast.LENGTH_SHORT).show();
+                                                                favButton.setImageResource(R.drawable.ic_favouritefull);
+                                                                favButton.setColorFilter(Color.parseColor("#F40F0F"));
+                                                                isLiked = true;
+                                                            });
+                                                }
+                                            });
+                                        });
+
                                 rescueButton.setOnClickListener(v -> {
                                     Toast.makeText(this, "Parcel rescued!", Toast.LENGTH_SHORT).show();
-                                    // Dodaj logikę rezerwacji
+                                    // Dodaj logikę rezerwacji paczki tutaj
                                 });
                             }
+
 
                             String title = documentSnapshot.getString("title");
                             String description = documentSnapshot.getString("description");

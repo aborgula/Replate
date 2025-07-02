@@ -11,7 +11,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
@@ -51,7 +50,7 @@ public class OrdersFragment extends Fragment {
                     ordersContainer.removeAllViews();
 
                     for (QueryDocumentSnapshot document : querySnapshot) {
-                        View itemView = LayoutInflater.from(getContext()).inflate(R.layout.order_layout, ordersContainer, false);
+                        View itemView = LayoutInflater.from(getContext()).inflate(R.layout.layout_order, ordersContainer, false);
 
                         TextView titleView = itemView.findViewById(R.id.itemTitle);
                         ImageView imageView = itemView.findViewById(R.id.itemImage);
