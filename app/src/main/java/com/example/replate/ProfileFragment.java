@@ -38,7 +38,7 @@ public class ProfileFragment extends Fragment {
     private FirebaseStorage storage;
     private FirebaseFirestore firestore;
     private FirebaseUser currentUser;
-    private CardView logoutBtn;
+    private CardView logoutBtn, settingsbtn;
 
 
 
@@ -55,6 +55,7 @@ public class ProfileFragment extends Fragment {
         star5 = view.findViewById(R.id.star5);
         noreviews = view.findViewById(R.id.noreviews);
         logoutBtn = view.findViewById(R.id.logoutbtn);
+        settingsbtn = view.findViewById(R.id.settingsbtn);
         storage = FirebaseStorage.getInstance();
         firestore = FirebaseFirestore.getInstance();
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -85,6 +86,11 @@ public class ProfileFragment extends Fragment {
             // Przejdź do ekranu logowania
             Intent intent = new Intent(getActivity(), LoginActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+        });
+
+        settingsbtn.setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), SettingsActivity.class);
             startActivity(intent);
         });
 

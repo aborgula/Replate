@@ -245,6 +245,8 @@ public class RegisterActivity extends AppCompatActivity {
                             userData.put("parcelIds", new ArrayList<String>());
                             userData.put("likedUsers", new ArrayList<String>());
                             userData.put("rating", null);
+                            userData.put("phone", null);
+                            userData.put("address", null);
 
 
                             db.collection("users").document(userId)
