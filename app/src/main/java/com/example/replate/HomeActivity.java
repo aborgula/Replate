@@ -307,7 +307,7 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
-    private void showAddParcelStep3Dialog() {
+    /**private void showAddParcelStep3Dialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = LayoutInflater.from(this);
         View dialogView = inflater.inflate(R.layout.dialog_add_parcel_step3, null);
@@ -473,7 +473,6 @@ public class HomeActivity extends AppCompatActivity {
 
                                     suggestions.add(fullAddress);
                                     addressToPlaceIdMap.put(fullAddress, placeId);  // zapisz
-                                    Log.d("adres", placeId);
                                 }
 
                                 ArrayAdapter<String> adapter = new ArrayAdapter<>(dialogView.getContext(),
@@ -566,6 +565,265 @@ public class HomeActivity extends AppCompatActivity {
             addressToPlaceIdMap.clear();
             selectedParcelImageUri = null;
         });
+    }**/
+    private void showAddParcelStep3Dialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View dialogView = inflater.inflate(R.layout.dialog_add_parcel_step3, null);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        dialog.setTitle("Choose time and location");
+
+        FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        LinearLayout mylocation = dialogView.findViewById(R.id.mylocation);
+        back = dialogView.findViewById(R.id.back);
+        next = dialogView.findViewById(R.id.next);
+
+        MaterialButton todayBtn = dialogView.findViewById(R.id.todayfltr);
+        MaterialButton tomorrowBtn = dialogView.findViewById(R.id.tomorrowfltr);
+
+        highlightButton(todayBtn, true);
+        highlightButton(tomorrowBtn, false);
+
+        todayBtn.setOnClickListener(v -> {
+            highlightButton(todayBtn, true);
+            highlightButton(tomorrowBtn, false);
+            selectedDay = "today";
+        });
+
+        tomorrowBtn.setOnClickListener(v -> {
+            highlightButton(todayBtn, false);
+            highlightButton(tomorrowBtn, true);
+            selectedDay = "tomorrow";
+        });
+
+        back.setOnClickListener(v -> {
+            dialog.dismiss();
+            showAddParcelStep2Dialog();
+        });
+
+        next.setOnClickListener(v -> {
+            if (selectedFullAddress.isEmpty() || selectedPlaceId == null) {
+                Toast.makeText(this, "Please select a valid address from suggestions", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            dialog.dismiss();
+            showAddParcelStep4Dialog();
+        });
+
+        dialog.setOnCancelListener(dialogInterface -> {
+            title = "";
+            description = "";
+            selectedTags.clear();
+            startTime = "";
+            endTime = "";
+            selectedFullAddress = "";
+            selectedPlaceId = "";
+            addressToPlaceIdMap.clear();
+            selectedParcelImageUri = null;
+            phoneNumber = "";
+            price = 0.0;
+            selectedDay = "today";
+        });
+
+        TextView startTimeText = dialogView.findViewById(R.id.startTimeText);
+        TextView endTimeText = dialogView.findViewById(R.id.endTimeText);
+
+        final Calendar startCalendar = Calendar.getInstance();
+        final Calendar endCalendar = Calendar.getInstance();
+
+        if (startTime.isEmpty() || endTime.isEmpty()) {
+            Calendar now = Calendar.getInstance();
+            startTime = String.format(Locale.getDefault(), "%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE));
+            now.add(Calendar.HOUR_OF_DAY, 2);
+            endTime = String.format(Locale.getDefault(), "%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE));
+        }
+
+        startTimeText.setText(startTime);
+        endTimeText.setText(endTime);
+
+        startTimeText.setOnClickListener(v -> {
+            showTimePicker((hour, minute) -> {
+                startCalendar.set(Calendar.HOUR_OF_DAY, hour);
+                startCalendar.set(Calendar.MINUTE, minute);
+                startTime = String.format(Locale.getDefault(), "%02d:%02d", hour, minute);
+                startTimeText.setText(startTime);
+
+                long diff = endCalendar.getTimeInMillis() - startCalendar.getTimeInMillis();
+                if (diff < 30 * 60 * 1000) {
+                    Calendar newEnd = (Calendar) startCalendar.clone();
+                    newEnd.add(Calendar.MINUTE, 30);
+                    endCalendar.setTimeInMillis(newEnd.getTimeInMillis());
+                    endTime = String.format(Locale.getDefault(), "%02d:%02d", newEnd.get(Calendar.HOUR_OF_DAY), newEnd.get(Calendar.MINUTE));
+                    endTimeText.setText(endTime);
+                }
+            });
+        });
+
+        endTimeText.setOnClickListener(v -> {
+            showTimePicker((hour, minute) -> {
+                endCalendar.set(Calendar.HOUR_OF_DAY, hour);
+                endCalendar.set(Calendar.MINUTE, minute);
+
+                long diff = endCalendar.getTimeInMillis() - startCalendar.getTimeInMillis();
+                if (diff >= 30 * 60 * 1000) {
+                    endTime = String.format(Locale.getDefault(), "%02d:%02d", hour, minute);
+                    endTimeText.setText(endTime);
+                } else {
+                    Toast.makeText(this, "End time must be at least 30 minutes after start time", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+
+        AutoCompleteTextView locationInput = dialogView.findViewById(R.id.locationAutoComplete);
+        PlacesClient placesClient = Places.createClient(this);
+        AutocompleteSessionToken token = AutocompleteSessionToken.newInstance();
+
+        // 🔄 Jeśli adres zapisany wcześniej w Firebase – pokaż go
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        if (currentUser != null) {
+            db.collection("users").document(currentUser.getUid()).get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            String savedAddress = documentSnapshot.getString("address");
+                            if (savedAddress != null && !savedAddress.isEmpty()) {
+                                locationInput.setText(savedAddress);
+                                locationInput.setSelection(savedAddress.length());
+                                selectedFullAddress = savedAddress;
+
+                                FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
+                                        .setTypeFilter(TypeFilter.ADDRESS)
+                                        .setSessionToken(token)
+                                        .setQuery(savedAddress)
+                                        .build();
+
+                                placesClient.findAutocompletePredictions(request)
+                                        .addOnSuccessListener(response -> {
+                                            for (AutocompletePrediction prediction : response.getAutocompletePredictions()) {
+                                                if (prediction.getFullText(null).toString().equals(savedAddress)) {
+                                                    selectedPlaceId = prediction.getPlaceId();
+                                                    break;
+                                                }
+                                            }
+
+                                            if (selectedPlaceId == null) {
+                                                locationInput.setError("Could not find place ID for this address");
+                                            } else {
+                                                locationInput.setError(null);
+                                            }
+                                        });
+                            }
+                        }
+                    });
+        }
+
+        locationInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (!s.toString().isEmpty()) {
+                    FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
+                            .setTypeFilter(TypeFilter.ADDRESS)
+                            .setSessionToken(token)
+                            .setQuery(s.toString())
+                            .build();
+
+                    placesClient.findAutocompletePredictions(request)
+                            .addOnSuccessListener(response -> {
+                                List<String> suggestions = new ArrayList<>();
+                                addressToPlaceIdMap.clear();
+
+                                for (AutocompletePrediction prediction : response.getAutocompletePredictions()) {
+                                    String fullAddress = prediction.getFullText(null).toString();
+                                    String placeId = prediction.getPlaceId();
+
+                                    suggestions.add(fullAddress);
+                                    addressToPlaceIdMap.put(fullAddress, placeId);
+                                }
+
+                                ArrayAdapter<String> adapter = new ArrayAdapter<>(dialogView.getContext(),
+                                        android.R.layout.simple_dropdown_item_1line, suggestions);
+                                locationInput.setAdapter(adapter);
+                                locationInput.showDropDown();
+
+                                locationInput.setOnItemClickListener((parent, view, position, id) -> {
+                                    selectedFullAddress = (String) parent.getItemAtPosition(position);
+                                    selectedPlaceId = addressToPlaceIdMap.get(selectedFullAddress);
+
+                                    if (!selectedFullAddress.matches(".*\\d+.*")) {
+                                        locationInput.setError("Please select a full address with a house number");
+                                        selectedPlaceId = null;
+                                    } else {
+                                        locationInput.setError(null);
+                                    }
+                                });
+                            });
+                }
+            }
+        });
+
+        mylocation.setOnClickListener(v -> {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Location permission not granted", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
+                if (location != null) {
+                    double lat = location.getLatitude();
+                    double lng = location.getLongitude();
+
+                    Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+                    try {
+                        List<Address> addresses = geocoder.getFromLocation(lat, lng, 1);
+                        if (addresses != null && !addresses.isEmpty()) {
+                            String addressLine = addresses.get(0).getAddressLine(0);
+                            locationInput.setText(addressLine);
+                            locationInput.setSelection(addressLine.length());
+                            selectedFullAddress = addressLine;
+
+                            FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
+                                    .setTypeFilter(TypeFilter.ADDRESS)
+                                    .setSessionToken(token)
+                                    .setQuery(addressLine)
+                                    .build();
+
+                            placesClient.findAutocompletePredictions(request)
+                                    .addOnSuccessListener(response -> {
+                                        for (AutocompletePrediction prediction : response.getAutocompletePredictions()) {
+                                            if (prediction.getFullText(null).toString().equals(addressLine)) {
+                                                selectedPlaceId = prediction.getPlaceId();
+                                                break;
+                                            }
+                                        }
+
+                                        if (selectedPlaceId == null) {
+                                            locationInput.setError("Could not find place ID for this location");
+                                        } else {
+                                            locationInput.setError(null);
+                                        }
+                                    });
+                        } else {
+                            Toast.makeText(this, "Could not determine address", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        Toast.makeText(this, "Geocoder failed", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(this, "Location not available", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+
+        dialog.show();
     }
 
     private void showAddParcelStep4Dialog() {
@@ -579,10 +837,34 @@ public class HomeActivity extends AppCompatActivity {
         addprice = dialogView.findViewById(R.id.addprice);
         addphonenumber = dialogView.findViewById(R.id.addphonenumber);
 
-        addprice.setText(String.format("%.2f", price));
-        addphonenumber.setText(phoneNumber);
         builder.setTitle("Add phone number and price");
         AlertDialog dialog = builder.create();
+
+        // Ustaw cenę
+        addprice.setText(String.format("%.2f", price));
+
+        // Jeśli phoneNumber już jest ustawiony – wpisz
+        if (phoneNumber != null && !phoneNumber.isEmpty()) {
+            addphonenumber.setText(phoneNumber);
+        } else {
+            // Pobierz z Firestore
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+            if (currentUser != null) {
+                db.collection("users").document(currentUser.getUid())
+                        .get()
+                        .addOnSuccessListener(documentSnapshot -> {
+                            if (documentSnapshot.exists()) {
+                                String fetchedPhone = documentSnapshot.getString("phone");
+                                if (fetchedPhone != null && !fetchedPhone.isEmpty()) {
+                                    addphonenumber.setText(fetchedPhone);
+                                    phoneNumber = fetchedPhone; // zapamiętaj na przyszłość
+                                }
+                            }
+                        });
+            }
+        }
 
         back.setOnClickListener(v -> {
             dialog.dismiss();
@@ -615,7 +897,6 @@ public class HomeActivity extends AppCompatActivity {
             showAddParcelStep5Dialog();
         });
 
-        dialog.show();
         dialog.setOnCancelListener(dialogInterface -> {
             title = "";
             description = "";
@@ -630,6 +911,8 @@ public class HomeActivity extends AppCompatActivity {
             phoneNumber = "";
             selectedDay = "today";
         });
+
+        dialog.show();
     }
 
     private void showAddParcelStep5Dialog() {

@@ -3,21 +3,39 @@ package com.example.replate;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 
+import android.app.AlertDialog;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.cardview.widget.CardView;
+
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.AutocompletePrediction;
+import com.google.android.libraries.places.api.model.AutocompleteSessionToken;
+import com.google.android.libraries.places.api.model.TypeFilter;
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
+import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import android.widget.Button;
+import androidx.core.content.ContextCompat;
+
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -29,6 +47,12 @@ public class SettingsActivity extends AppCompatActivity {
     FirebaseAuth mAuth;
     FirebaseFirestore db;
     FirebaseUser currentUser;
+    private PlacesClient placesClient;
+    private AutocompleteSessionToken token;
+    private Map<String, String> addressToPlaceIdMap = new HashMap<>();
+    private String selectedFullAddress = "";
+    private String selectedPlaceId = null;
+
 
 
     @Override
@@ -119,7 +143,115 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
         deleteBtn.setOnClickListener(v -> {
-            // Handle account delete/save changes
+            AlertDialog dialog = new AlertDialog.Builder(SettingsActivity.this)
+                    .setTitle("Delete Account")
+                    .setMessage("Are you sure you want to delete your account? This action cannot be undone.")
+                    .setPositiveButton("Yes, delete", (dialogInterface, which) -> {
+                        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                        if (currentUser != null) {
+                            String userId = currentUser.getUid();
+                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                            db.collection("users").document(userId)
+                                    .delete()
+                                    .addOnSuccessListener(unused -> {
+                                        currentUser.delete()
+                                                .addOnSuccessListener(aVoid -> {
+                                                    Toast.makeText(SettingsActivity.this, "Account deleted successfully", Toast.LENGTH_LONG).show();
+                                                    FirebaseAuth.getInstance().signOut();
+                                                    finish();
+                                                })
+                                                .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, "Failed to delete account: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                                    })
+                                    .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, "Failed to delete Firestore data: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                        }
+                    })
+                    .setNegativeButton("Cancel", (dialogInterface, which) -> dialogInterface.dismiss())
+                    .create();
+
+            dialog.setOnShowListener(dialogInterface -> {
+                Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+
+                // Zmień kolory tekstu
+                positiveButton.setTextColor(ContextCompat.getColor(SettingsActivity.this, R.color.brown));
+                negativeButton.setTextColor(ContextCompat.getColor(SettingsActivity.this, R.color.green));
+            });
+
+            dialog.show();
         });
+
+        // SharedPreferences
+        SharedPreferences sharedPrefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
+
+        boolean notificationsEnabled = sharedPrefs.getBoolean("notifications_enabled", true);
+        notificationsSwitch.setChecked(notificationsEnabled);
+
+        notificationsSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            SharedPreferences.Editor editor = sharedPrefs.edit();
+            editor.putBoolean("notifications_enabled", isChecked);
+            editor.apply();
+
+            String message = isChecked ? "Notifications enabled" : "Notifications disabled";
+            Toast.makeText(SettingsActivity.this, message, Toast.LENGTH_SHORT).show();
+        });
+
+        // Inicjalizacja Places API
+        Places.initialize(getApplicationContext(), "AIzaSyAJo3H3Jy6QIlPC2JCJHNzhQTSNBZgPcnE"); // <-- użyj własnego klucza
+        placesClient = Places.createClient(this);
+        token = AutocompleteSessionToken.newInstance();
+
+        if (addressEditText instanceof AutoCompleteTextView) {
+            AutoCompleteTextView autoAddress = (AutoCompleteTextView) addressEditText;
+
+            autoAddress.addTextChangedListener(new TextWatcher() {
+                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    if (!s.toString().isEmpty()) {
+                        FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
+                                .setTypeFilter(TypeFilter.ADDRESS)
+                                .setSessionToken(token)
+                                .setQuery(s.toString())
+                                .build();
+
+                        placesClient.findAutocompletePredictions(request)
+                                .addOnSuccessListener(response -> {
+                                    List<String> suggestions = new ArrayList<>();
+                                    addressToPlaceIdMap.clear();
+
+                                    for (AutocompletePrediction prediction : response.getAutocompletePredictions()) {
+                                        String fullAddress = prediction.getFullText(null).toString();
+                                        String placeId = prediction.getPlaceId();
+
+                                        suggestions.add(fullAddress);
+                                        addressToPlaceIdMap.put(fullAddress, placeId);
+                                    }
+
+                                    ArrayAdapter<String> adapter = new ArrayAdapter<>(SettingsActivity.this,
+                                            android.R.layout.simple_dropdown_item_1line, suggestions);
+                                    autoAddress.setAdapter(adapter);
+                                    autoAddress.showDropDown();
+
+                                    autoAddress.setOnItemClickListener((parent, view, position, id) -> {
+                                        selectedFullAddress = (String) parent.getItemAtPosition(position);
+                                        selectedPlaceId = addressToPlaceIdMap.get(selectedFullAddress);
+
+                                        if (!selectedFullAddress.matches(".*\\d+.*")) {
+                                            autoAddress.setError("Please select a full address with a house number");
+                                            selectedPlaceId = null;
+                                        } else {
+                                            autoAddress.setError(null); // OK
+                                        }
+                                    });
+                                });
+                    }
+                }
+            });
+        }
+
+
     }
 }
