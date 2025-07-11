@@ -114,8 +114,16 @@ public class HomeActivity extends AppCompatActivity {
 
         binding = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        replaceFragment(new PickupFragment());
         binding.bottomNavigationView.setBackground(null);
+
+        if (getIntent().getBooleanExtra("openProfileFragment", false)) {
+            String userId = getIntent().getStringExtra("showUserId");
+            if (userId != null) {
+                openUserProfile(userId);
+            }
+        }else{
+            replaceFragment(new PickupFragment());
+        }
 
         if (!Places.isInitialized()) {
             Places.initialize(getApplicationContext(), "AIzaSyAwKhbg7_QX7gYKwuLRuaLYf6GXz2lAu0E");
@@ -147,7 +155,6 @@ public class HomeActivity extends AppCompatActivity {
 
         binding.bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
-
             if (itemId == R.id.pickup) {
                 replaceFragment(new PickupFragment());
             } else if (itemId == R.id.favourites) {
@@ -162,6 +169,7 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void replaceFragment(Fragment fragment) {
+        Log.d("qqq", " w replacefragment");
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.frame_layout, fragment);
@@ -1283,4 +1291,19 @@ imageRef.putBytes(imageBytes)
         if (text == null || text.isEmpty()) return text;
         return text.substring(0, 1).toUpperCase() + text.substring(1);
     }
+
+    private void openUserProfile(String userId) {
+        ProfileFragment profileFragment = new ProfileFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString("userId", userId);
+        profileFragment.setArguments(bundle);
+        Log.d("qqq", "w opeuserprofile()... w homeactivity userid: " + userId);
+
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.frame_layout, profileFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
 }

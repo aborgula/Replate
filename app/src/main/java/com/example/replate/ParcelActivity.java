@@ -49,8 +49,11 @@ public class ParcelActivity extends AppCompatActivity {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         String parcelId = getIntent().getStringExtra("parcelId");
         ImageButton backButton = findViewById(R.id.backButton);
+        LinearLayout parcelOwnerLayout = findViewById(R.id.parcelOwner);
         favButton = findViewById(R.id.favButton);
         backButton.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
+
+
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.mapFragment);
@@ -73,6 +76,16 @@ public class ParcelActivity extends AppCompatActivity {
                             ImageView userAvatar = findViewById(R.id.userAvatar);
 
                             if (creatorId != null) {
+
+                                parcelOwnerLayout.setOnClickListener(v -> {
+                                    if (creatorId != null) {
+                                        Intent intent = new Intent(ParcelActivity.this, HomeActivity.class);
+                                        intent.putExtra("showUserId", creatorId);
+                                        intent.putExtra("openProfileFragment", true); // dla bezpieczeństwa
+                                        startActivity(intent);
+                                    }
+                                });
+
                                 db.collection("users").document(creatorId)
                                         .get()
                                         .addOnSuccessListener(userDoc -> {
@@ -282,6 +295,8 @@ public class ParcelActivity extends AppCompatActivity {
                     .addOnFailureListener(e ->
                             Toast.makeText(this, "Failed to load parcel data", Toast.LENGTH_SHORT).show());
         }
+
+
 
 
     }

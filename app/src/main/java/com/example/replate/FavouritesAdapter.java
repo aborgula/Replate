@@ -18,6 +18,8 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.Vi
 
     private List<User> users;
     private Context context;
+    private OnUserClickListener clickListener;
+
 
     public interface OnUserRemovedListener {
         void onUserRemoved(User user, int position);
@@ -25,10 +27,13 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.Vi
 
     private OnUserRemovedListener listener;
 
-    public FavouritesAdapter(List<User> users, Context context, OnUserRemovedListener listener) {
+    public FavouritesAdapter(List<User> users, Context context,
+                             OnUserRemovedListener listener,
+                             OnUserClickListener clickListener) {
         this.users = users;
         this.context = context;
         this.listener = listener;
+        this.clickListener = clickListener;
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
@@ -41,6 +46,15 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.Vi
             usernameView = itemView.findViewById(R.id.userLogin);
             ratingView = itemView.findViewById(R.id.userRating);
             imageView = itemView.findViewById(R.id.userImage);
+
+            itemView.setOnClickListener(v -> {
+                if (clickListener != null) {
+                    int position = getAdapterPosition();
+                    if (position != RecyclerView.NO_POSITION) {
+                        clickListener.onUserClick(users.get(position));
+                    }
+                }
+            });
         }
     }
 
@@ -81,7 +95,9 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.Vi
         if (listener != null) listener.onUserRemoved(user, position);
     }
 
-
+    public interface OnUserClickListener {
+        void onUserClick(User user);
+    }
 }
 
 

@@ -38,7 +38,8 @@ public class ProfileFragment extends Fragment {
     private FirebaseStorage storage;
     private FirebaseFirestore firestore;
     private FirebaseUser currentUser;
-    private CardView logoutBtn, settingsbtn;
+    private CardView logoutBtn, settingsbtn, packagesbtn;
+    private TextView userLogin;
 
 
 
@@ -58,12 +59,32 @@ public class ProfileFragment extends Fragment {
         settingsbtn = view.findViewById(R.id.settingsbtn);
         storage = FirebaseStorage.getInstance();
         firestore = FirebaseFirestore.getInstance();
-        currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        userLogin = view.findViewById(R.id.userLogin);
+        packagesbtn = view.findViewById(R.id.packagesbtn);
 
-        firestore.collection("users").document(currentUser.getUid()).get()
+        String passedUserId = null;
+        Bundle args = getArguments();
+        if (args != null) {
+            passedUserId = args.getString("userId"); // <-- z FavouritesFragment
+        }
+
+        String finalUserId;
+        if (passedUserId != null) {
+            finalUserId = passedUserId; // pokazujemy innego użytkownika
+            logoutBtn.setVisibility(View.GONE);   // ukryj przyciski, bo to nie profil użytkownika
+            settingsbtn.setVisibility(View.GONE);
+            profileImage.setClickable(false);     // nie pozwalaj zmieniać zdjęcia
+        } else {
+            currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            finalUserId = currentUser.getUid();   // pokazujemy własny profil
+        }
+
+        firestore.collection("users").document(finalUserId).get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
                         String base64Image = documentSnapshot.getString("profileImageBase64");
+                        String userLoginString = documentSnapshot.getString("login");
+                        userLogin.setText(userLoginString);
                         if (base64Image != null) {
                             byte[] decodedBytes = Base64.decode(base64Image, Base64.DEFAULT);
                             Bitmap decodedBitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
@@ -71,8 +92,23 @@ public class ProfileFragment extends Fragment {
                         }
                     }
 
-                    loadUserRating();
+                    loadUserRating(finalUserId); // ⬅️ też zmodyfikuj funkcję oceniania
                 });
+
+        packagesbtn.setOnClickListener(v -> {
+            Intent intent = new Intent(getContext(), PackagesActivity.class);
+
+            // Sprawdź, czy to profil innego użytkownika (czyli czy przekazano userId w Bundle)
+            if (getArguments() != null && getArguments().containsKey("userId")) {
+                String userId = getArguments().getString("userId");
+                intent.putExtra("userId", userId); // inny użytkownik
+            } else if (currentUser != null) {
+                intent.putExtra("userId", currentUser.getUid()); // własny profil
+            }
+
+            startActivity(intent);
+        });
+
 
         logoutBtn.setOnClickListener(v -> {
             FirebaseAuth.getInstance().signOut();
@@ -192,7 +228,7 @@ public class ProfileFragment extends Fragment {
                 .addOnFailureListener(e -> Log.e("Firestore", "Error saving image", e));
     }
 
-    private void loadUserRating() {
+   /** private void loadUserRating() {
         if (currentUser == null) return;
 
         firestore.collection("users").document(currentUser.getUid())
@@ -212,7 +248,27 @@ public class ProfileFragment extends Fragment {
                     Log.e("Firestore", "Error fetching rating", e);
                     displayStars(6.0); // domyślnie przy błędzie
                 });
-    }
+    }**/
+   private void loadUserRating(String userId) {
+       firestore.collection("users").document(userId)
+               .get()
+               .addOnSuccessListener(documentSnapshot -> {
+                   if (documentSnapshot.exists()) {
+                       Double rating = documentSnapshot.getDouble("rating");
+
+                       if (rating == null) {
+                           rating = 6.0; // domyślnie
+                       }
+
+                       displayStars(rating);
+                   }
+               })
+               .addOnFailureListener(e -> {
+                   Log.e("Firestore", "Error fetching rating", e);
+                   displayStars(6.0); // domyślnie przy błędzie
+               });
+   }
+
 
     private void displayStars(double rating) {
         ImageView[] stars = {star1, star2, star3, star4, star5};

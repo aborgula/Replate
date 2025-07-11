@@ -50,7 +50,12 @@ public class FavouritesFragment extends Fragment {
         recyclerView = view.findViewById(R.id.favouritesRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        adapter = new FavouritesAdapter(favouriteUsers, getContext(), (user, position) -> removeUserFromLikedList(user));
+        adapter = new FavouritesAdapter(
+                favouriteUsers,
+                getContext(),
+                (user, position) -> removeUserFromLikedList(user), // swipe
+                user -> openUserProfile(user.getUid())
+        );
         recyclerView.setAdapter(adapter);
 
         attachSwipeToDelete();
@@ -217,5 +222,20 @@ public class FavouritesFragment extends Fragment {
             }
         }
     }
+
+    private void openUserProfile(String userId) {
+        ProfileFragment profileFragment = new ProfileFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString("userId", userId);
+        Log.d("userid", "tu powinno byc ala3 id: " + userId);
+        profileFragment.setArguments(bundle);
+
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.frame_layout, profileFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
 
 }

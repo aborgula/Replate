@@ -30,7 +30,7 @@
             android:layout_gravity="center"
             android:layout_height="wrap_content"
             android:textColor="#C3000000"
-            android:textSize="25dp"
+            android:textSize="23dp"
             android:textStyle="bold"
             android:text="Settings"/>
     </LinearLayout>
