@@ -33,6 +33,7 @@ import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthOptions;
 import com.google.firebase.auth.PhoneAuthProvider;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import android.util.Log;
 import android.widget.Toast;
@@ -237,31 +238,43 @@ public class RegisterActivity extends AppCompatActivity {
                             FirebaseUser user = mAuth.getCurrentUser();
                             String userId = user.getUid();
 
-                            // Zapisz dane do Firestore
                             FirebaseFirestore db = FirebaseFirestore.getInstance();
-                            Map<String, Object> userData = new HashMap<>();
-                            userData.put("login", loginValue);
-                            userData.put("email", email);
-                            userData.put("parcelIds", new ArrayList<String>());
-                            userData.put("likedUsers", new ArrayList<String>());
-                            userData.put("rating", null);
-                            userData.put("phone", null);
-                            userData.put("address", null);
 
+                            // 🔹 Pobierz token FCM
+                            FirebaseMessaging.getInstance().getToken()
+                                    .addOnCompleteListener(tokenTask -> {
+                                        if (!tokenTask.isSuccessful()) {
+                                            Log.w("RegisterActivity", "Fetching FCM token failed", tokenTask.getException());
+                                            return;
+                                        }
 
-                            db.collection("users").document(userId)
-                                    .set(userData)
-                                    .addOnSuccessListener(aVoid -> {
-                                        Toast.makeText(RegisterActivity.this, "Zarejestrowano i zapisano dane", Toast.LENGTH_SHORT).show();
-                                        // Przejście do HomeActivity
-                                        Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
-                                        startActivity(intent);
-                                        finish();
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        Toast.makeText(RegisterActivity.this, "Błąd zapisu danych: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                        String token = tokenTask.getResult(); // 🔸 Tu jest token
+
+                                        Map<String, Object> userData = new HashMap<>();
+                                        userData.put("login", loginValue);
+                                        userData.put("email", email);
+                                        userData.put("parcelIds", new ArrayList<String>());
+                                        userData.put("likedUsers", new ArrayList<String>());
+                                        userData.put("rating", null);
+                                        userData.put("phone", null);
+                                        userData.put("address", null);
+                                        userData.put("likedBy", new ArrayList<String>());
+                                        userData.put("orders", new ArrayList<String>());
+                                        userData.put("fcmToken", token);
+                                        userData.put("notificationsEnabled", true);
+
+                                        db.collection("users").document(userId)
+                                                .set(userData)
+                                                .addOnSuccessListener(aVoid -> {
+                                                    Toast.makeText(RegisterActivity.this, "Zarejestrowano i zapisano dane", Toast.LENGTH_SHORT).show();
+                                                    Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
+                                                    startActivity(intent);
+                                                    finish();
+                                                })
+                                                .addOnFailureListener(e -> {
+                                                    Toast.makeText(RegisterActivity.this, "Błąd zapisu danych: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                });
                                     });
-
                         } else {
                             Toast.makeText(RegisterActivity.this, task.getException().getMessage(), Toast.LENGTH_LONG).show();
                             Log.e("FirebaseAuth", "Register error", task.getException());

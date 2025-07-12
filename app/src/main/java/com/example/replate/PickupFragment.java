@@ -22,6 +22,7 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -218,15 +219,27 @@ public class PickupFragment extends Fragment {
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         String parcelDate = doc.getString("date");
+                        String parcelId = doc.getId();
+                        String userId = doc.getString("userId");
 
                         if (parcelDate != null && parcelDate.compareTo(today) < 0) {
-                            db.collection("parcels").document(doc.getId())
+                            // Najpierw usuń parcelId z użytkownika
+                            if (userId != null) {
+                                db.collection("users").document(userId)
+                                        .update("parcelIds", FieldValue.arrayRemove(parcelId))
+                                        .addOnSuccessListener(aVoid -> Log.d("DeleteParcel", "Removed parcelId from user: " + parcelId))
+                                        .addOnFailureListener(e -> Log.e("DeleteParcel", "Failed to update user for parcel: " + parcelId, e));
+                            }
+
+                            // Następnie usuń paczkę
+                            db.collection("parcels").document(parcelId)
                                     .delete()
-                                    .addOnSuccessListener(aVoid -> Log.d("DeleteParcel", "Deleted expired parcel: " + doc.getId()))
-                                    .addOnFailureListener(e -> Log.e("DeleteParcel", "Failed to delete: " + doc.getId(), e));
+                                    .addOnSuccessListener(aVoid -> Log.d("DeleteParcel", "Deleted expired parcel: " + parcelId))
+                                    .addOnFailureListener(e -> Log.e("DeleteParcel", "Failed to delete: " + parcelId, e));
                         }
                     }
                 })
                 .addOnFailureListener(e -> Log.e("DeleteParcel", "Failed to fetch parcels", e));
     }
+
 }

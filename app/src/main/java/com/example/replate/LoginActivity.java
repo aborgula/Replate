@@ -98,7 +98,10 @@ import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthOptions;
 import com.google.firebase.auth.PhoneAuthProvider;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class LoginActivity extends AppCompatActivity {
@@ -188,8 +191,8 @@ public class LoginActivity extends AppCompatActivity {
                         FirebaseUser user = mAuth.getCurrentUser();
                         if (user != null) {
                             String userId = user.getUid();
-
                             FirebaseFirestore db = FirebaseFirestore.getInstance();
+
                             db.collection("users").document(userId)
                                     .get()
                                     .addOnSuccessListener(documentSnapshot -> {
@@ -198,17 +201,49 @@ public class LoginActivity extends AppCompatActivity {
                                             if (login != null && !login.isEmpty()) {
                                                 Toast.makeText(this, "Welcome, " + login + "!", Toast.LENGTH_LONG).show();
                                             }
-                                        }
-                                        goToMain(); // przejdź do głównej aktywności
 
+                                            // 🔐 Pobierz FCM token i zaktualizuj w Firestore
+                                            FirebaseMessaging.getInstance().getToken()
+                                                    .addOnCompleteListener(tokenTask -> {
+                                                        if (tokenTask.isSuccessful()) {
+                                                            String token = tokenTask.getResult();
+                                                            Map<String, Object> updates = new HashMap<>();
+                                                            updates.put("fcmToken", token);
+
+                                                            // Jeśli pole notificationsEnabled nie istnieje, ustaw na true
+                                                            if (!documentSnapshot.contains("notificationsEnabled")) {
+                                                                updates.put("notificationsEnabled", true);
+                                                            }
+
+                                                            db.collection("users").document(userId)
+                                                                    .update(updates)
+                                                                    .addOnSuccessListener(aVoid -> {
+                                                                        // Przejdź dalej po sukcesie
+                                                                        goToMain();
+                                                                    })
+                                                                    .addOnFailureListener(e -> {
+                                                                        Toast.makeText(this, "Failed to update token", Toast.LENGTH_SHORT).show();
+                                                                        goToMain(); // przejdź mimo błędu
+                                                                    });
+                                                        } else {
+                                                            Toast.makeText(this, "Couldn't get FCM token", Toast.LENGTH_SHORT).show();
+                                                            goToMain();
+                                                        }
+                                                    });
+                                        } else {
+                                            Toast.makeText(this, "User data not found", Toast.LENGTH_SHORT).show();
+                                            goToMain();
+                                        }
+
+                                        // Zapisz lokalnie że zalogowany
                                         getSharedPreferences("MyPrefs", MODE_PRIVATE)
                                                 .edit()
                                                 .putBoolean("isLoggedIn", true)
                                                 .apply();
                                     })
                                     .addOnFailureListener(e -> {
-                                        Toast.makeText(this, "Error reading data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                        goToMain(); // nawet jeśli błąd, nadal przejdź
+                                        Toast.makeText(this, "Error reading user data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                        goToMain(); // przejdź mimo błędu
                                     });
                         } else {
                             goToMain(); // fallback

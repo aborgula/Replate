@@ -54,6 +54,7 @@
             android:layout_height="wrap_content"
             >
             <ImageView
+                app:tint="@color/brown"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:src="@drawable/ic_login"/>
@@ -107,7 +108,7 @@
             android:layout_height="wrap_content"
             >
             <ImageView
-                android:tint="@color/brown"
+                app:tint="@color/brown"
                 android:layout_width="30dp"
                 android:layout_height="32dp"
                 android:src="@drawable/ic_locker"/>

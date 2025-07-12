@@ -1,8 +1,11 @@
 package com.example.replate;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -46,9 +49,11 @@ import android.location.Location;
 
 import androidx.core.app.ActivityCompat;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 public class ChooseLocationRangeActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -137,9 +142,35 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
                     LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
                     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 12f));
                     googleMap.addMarker(new MarkerOptions().position(userLocation).title("You're here"));
+
+                    // Odwrócone geokodowanie - zamiana współrzędnych na adres
+                    Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+                    try {
+                        List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                        if (addresses != null && !addresses.isEmpty()) {
+                            Address address = addresses.get(0);
+                            String addressLine = address.getThoroughfare(); // ulica
+                            String city = address.getLocality(); // miasto
+
+                            String fullAddress = "";
+                            if (addressLine != null) fullAddress += addressLine;
+                            if (city != null) {
+                                if (!fullAddress.isEmpty()) fullAddress += ", ";
+                                fullAddress += city;
+                            }
+
+                            if (!fullAddress.isEmpty()) {
+                                searchCity.setText(fullAddress);
+                                selectedPlaceId = null; // resetujemy, bo wpisaliśmy ręcznie adres
+                            }
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             });
         });
+
 
 
         // === Show Results Button ===
@@ -174,9 +205,14 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
                         editor.putString("lastPlaceId", selectedPlaceId);
                         editor.putString("lastPlaceName", place.getName());
                         editor.apply();
+
+                        Intent intent = new Intent(ChooseLocationRangeActivity.this, HomeActivity.class);
+                        startActivity(intent);
+                        finish();
                     }
                 }).addOnFailureListener(e -> Log.e("PlacesAPI", "Place fetch failed", e));
             }
+
         });
 
         // === Distance Slider ===

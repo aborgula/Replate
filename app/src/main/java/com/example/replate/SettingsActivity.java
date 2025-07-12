@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
@@ -28,6 +29,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -152,18 +155,40 @@ public class SettingsActivity extends AppCompatActivity {
                             String userId = currentUser.getUid();
                             FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-                            db.collection("users").document(userId)
-                                    .delete()
-                                    .addOnSuccessListener(unused -> {
-                                        currentUser.delete()
+                            // Najpierw usuń paczki użytkownika
+                            db.collection("parcels")
+                                    .whereEqualTo("userId", userId)
+                                    .get()
+                                    .addOnSuccessListener(querySnapshot -> {
+                                        WriteBatch batch = db.batch();
+
+                                        for (QueryDocumentSnapshot doc : querySnapshot) {
+                                            batch.delete(doc.getReference());
+                                        }
+
+                                        batch.commit()
                                                 .addOnSuccessListener(aVoid -> {
-                                                    Toast.makeText(SettingsActivity.this, "Account deleted successfully", Toast.LENGTH_LONG).show();
-                                                    FirebaseAuth.getInstance().signOut();
-                                                    finish();
+                                                    // Teraz usuń dokument użytkownika
+                                                    db.collection("users").document(userId)
+                                                            .delete()
+                                                            .addOnSuccessListener(unused -> {
+                                                                // I w końcu usuń konto Firebase Auth
+                                                                currentUser.delete()
+                                                                        .addOnSuccessListener(aVoid2 -> {
+                                                                            Toast.makeText(SettingsActivity.this, "Account deleted successfully", Toast.LENGTH_LONG).show();
+                                                                            FirebaseAuth.getInstance().signOut();
+                                                                            Intent intent = new Intent(SettingsActivity.this, LoginActivity.class);
+                                                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                                                            startActivity(intent);
+                                                                            finish();
+                                                                        })
+                                                                        .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, "Failed to delete account: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                                                            })
+                                                            .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, "Failed to delete Firestore user data: " + e.getMessage(), Toast.LENGTH_LONG).show());
                                                 })
-                                                .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, "Failed to delete account: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                                                .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, "Failed to delete parcels: " + e.getMessage(), Toast.LENGTH_LONG).show());
                                     })
-                                    .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, "Failed to delete Firestore data: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                                    .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, "Failed to fetch parcels: " + e.getMessage(), Toast.LENGTH_LONG).show());
                         }
                     })
                     .setNegativeButton("Cancel", (dialogInterface, which) -> dialogInterface.dismiss())
@@ -181,19 +206,39 @@ public class SettingsActivity extends AppCompatActivity {
             dialog.show();
         });
 
+
         // SharedPreferences
         SharedPreferences sharedPrefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
 
         boolean notificationsEnabled = sharedPrefs.getBoolean("notifications_enabled", true);
-        notificationsSwitch.setChecked(notificationsEnabled);
+        if (currentUser != null) {
+            db.collection("users").document(currentUser.getUid()).get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            Boolean isNotificationsEnabled = documentSnapshot.getBoolean("notificationsEnabled");
+                            if (isNotificationsEnabled != null) {
+                                notificationsSwitch.setChecked(isNotificationsEnabled);
+                            }
+                        }
+                    });
+        }
 
         notificationsSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            // Zapis do lokalnych SharedPreferences (opcjonalnie – możesz zostawić)
             SharedPreferences.Editor editor = sharedPrefs.edit();
             editor.putBoolean("notifications_enabled", isChecked);
             editor.apply();
 
-            String message = isChecked ? "Notifications enabled" : "Notifications disabled";
-            Toast.makeText(SettingsActivity.this, message, Toast.LENGTH_SHORT).show();
+            // Zapis do Firestore
+            if (currentUser != null) {
+                db.collection("users").document(currentUser.getUid())
+                        .update("notificationsEnabled", isChecked)
+                        .addOnSuccessListener(aVoid -> {
+                            String msg = isChecked ? "Notifications enabled" : "Notifications disabled";
+                            Toast.makeText(SettingsActivity.this, msg, Toast.LENGTH_SHORT).show();
+                        })
+                        .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, "Failed to update notification setting", Toast.LENGTH_SHORT).show());
+            }
         });
 
         // Inicjalizacja Places API
@@ -251,7 +296,5 @@ public class SettingsActivity extends AppCompatActivity {
                 }
             });
         }
-
-
     }
 }

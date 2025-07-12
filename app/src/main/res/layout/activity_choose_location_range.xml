@@ -44,7 +44,7 @@
             android:scaleY="1.6"
             android:src="@drawable/ic_close"
             android:background="@null"
-            android:tint="#D5D5D5" />
+            app:tint="#D5D5D5" />
     </LinearLayout>
 
     <!-- Zaokrąglony dolny baner -->
@@ -99,7 +99,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_navigation"
-                android:tint="@color/slider_thumb_color"
+                app:tint="@color/slider_thumb_color"
                 android:layout_marginEnd="10dp"/>
             <TextView
                 android:id="@+id/usecurrentlocation"

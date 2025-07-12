@@ -10,10 +10,8 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import java.util.List;
 
 public class ParcelAdapter extends RecyclerView.Adapter<ParcelAdapter.ParcelViewHolder> {
@@ -32,15 +30,20 @@ public class ParcelAdapter extends RecyclerView.Adapter<ParcelAdapter.ParcelView
         void onParcelClick(Parcel parcel);
     }
 
+    private OnCancelClickListener cancelClickListener;
+
     public ParcelAdapter(Context context, List<Parcel> parcelList, String currentUserId,
                          OnDeleteClickListener deleteClickListener,
+                         OnCancelClickListener cancelClickListener,
                          OnParcelClickListener parcelClickListener) {
         this.context = context;
         this.parcelList = parcelList;
         this.currentUserId = currentUserId;
         this.deleteClickListener = deleteClickListener;
+        this.cancelClickListener = cancelClickListener;
         this.parcelClickListener = parcelClickListener;
     }
+
 
     @NonNull
     @Override
@@ -49,7 +52,6 @@ public class ParcelAdapter extends RecyclerView.Adapter<ParcelAdapter.ParcelView
         return new ParcelViewHolder(view);
     }
 
-    @Override
     public void onBindViewHolder(@NonNull ParcelViewHolder holder, int position) {
         Parcel parcel = parcelList.get(position);
         holder.title.setText(parcel.getTitle());
@@ -71,25 +73,27 @@ public class ParcelAdapter extends RecyclerView.Adapter<ParcelAdapter.ParcelView
             holder.image.setImageResource(R.drawable.photo_mixed);
         }
 
-        // Ukryj "Delete", jeśli paczka nie należy do aktualnego użytkownika
-        if (!parcel.getUserId().equals(currentUserId)) {
-            holder.deleteButton.setVisibility(View.GONE);
-        } else {
+        // **TUTAJ ZMIANA:**
+        if (parcel.getUserId().equals(currentUserId)) {
+            // Paczka należy do aktualnego użytkownika - pokaż Delete
+            holder.deleteButton.setText("Delete");
             holder.deleteButton.setVisibility(View.VISIBLE);
             holder.deleteButton.setOnClickListener(v -> deleteClickListener.onDeleteClick(parcel));
-        }
 
-        // Obsługa kliknięcia paczki
-// Kliknięcie działa tylko, jeśli to nie Twoja paczka (czyli nie ma przycisku Delete)
-        if (!parcel.getUserId().equals(currentUserId)) {
-            holder.itemView.setOnClickListener(v -> {
-                parcelClickListener.onParcelClick(parcel);
-            });
+            // Nie reaguj na kliknięcie całego elementu
+            holder.itemView.setOnClickListener(null);
+
         } else {
-            holder.itemView.setOnClickListener(null); // lub brak reakcji
-        }
+            // Paczka zarezerwowana przez aktualnego użytkownika (nie jest jego własnością)
+            holder.deleteButton.setText("Cancel");
+            holder.deleteButton.setVisibility(View.VISIBLE);
+            holder.deleteButton.setOnClickListener(v -> cancelClickListener.onCancelClick(parcel));
 
+            // Kliknięcie na paczkę wywołuje parcelClickListener
+            holder.itemView.setOnClickListener(v -> parcelClickListener.onParcelClick(parcel));
+        }
     }
+
 
     @Override
     public int getItemCount() {
@@ -108,5 +112,10 @@ public class ParcelAdapter extends RecyclerView.Adapter<ParcelAdapter.ParcelView
             deleteButton = itemView.findViewById(R.id.deleteButton);
         }
     }
+
+    public interface OnCancelClickListener {
+        void onCancelClick(Parcel parcel);
+    }
+
 }
 

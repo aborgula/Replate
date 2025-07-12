@@ -196,25 +196,30 @@ public class FragmentList extends Fragment {
 
                                 favoriteButton.setOnClickListener(v -> {
                                     if (isLiked.get()) {
+                                        // Usuń z ulubionych
                                         db.collection("users").document(currentUserId)
-                                                .update("likedUsers", FieldValue.arrayRemove(creatorId))
-                                                .addOnSuccessListener(unused -> {
-                                                    Toast.makeText(requireContext(), "Removed from favorites", Toast.LENGTH_SHORT).show();
-                                                    favoriteButton.setImageResource(R.drawable.ic_favourite);
-                                                    favoriteButton.setColorFilter(Color.parseColor("#F8F8F8"));
-                                                });
+                                                .update("likedUsers", FieldValue.arrayRemove(creatorId));
+                                        db.collection("users").document(creatorId)
+                                                .update("likedBy", FieldValue.arrayRemove(currentUserId));
+
+                                        favoriteButton.setImageResource(R.drawable.ic_favourite);
+                                        favoriteButton.setColorFilter(Color.parseColor("#F8F8F8"));
+                                        Toast.makeText(requireContext(), "Removed from favorites", Toast.LENGTH_SHORT).show();
                                     } else {
+                                        // Dodaj do ulubionych
                                         db.collection("users").document(currentUserId)
-                                                .update("likedUsers", FieldValue.arrayUnion(creatorId))
-                                                .addOnSuccessListener(unused -> {
-                                                    Toast.makeText(requireContext(), "Added to favorites", Toast.LENGTH_SHORT).show();
-                                                    favoriteButton.setImageResource(R.drawable.ic_favouritefull);
-                                                    favoriteButton.setColorFilter(Color.parseColor("#F40F0F"));
-                                                });
+                                                .update("likedUsers", FieldValue.arrayUnion(creatorId));
+                                        db.collection("users").document(creatorId)
+                                                .update("likedBy", FieldValue.arrayUnion(currentUserId));
+
+                                        favoriteButton.setImageResource(R.drawable.ic_favouritefull);
+                                        favoriteButton.setColorFilter(Color.parseColor("#F40F0F"));
+                                        Toast.makeText(requireContext(), "Added to favorites", Toast.LENGTH_SHORT).show();
                                     }
 
                                     isLiked.set(!isLiked.get());
                                 });
+
                             }
                         }
                     })

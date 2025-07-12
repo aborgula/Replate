@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -47,6 +48,7 @@ public class PackagesActivity extends AppCompatActivity {
                 parcelList,
                 currentUser != null ? currentUser.getUid() : "",
 
+                // onDeleteClick
                 parcel -> {
                     AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
                             .setTitle("Delete parcel")
@@ -67,21 +69,43 @@ public class PackagesActivity extends AppCompatActivity {
 
                     dialog.show();
 
-                    // ⬇️ Zmieniamy kolory po pokazaniu dialogu
+                    // Zmiana kolorów przycisków
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(
                             ContextCompat.getColor(this, R.color.brown));
-
                     dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(
                             ContextCompat.getColor(this, R.color.yellow));
                 },
 
+                // onCancelClick (nowa funkcja, którą musisz dodać)
+                parcel -> {
+                    // Tutaj dodaj logikę anulowania rezerwacji paczki:
+                    // - zmień status paczki na "active"
+                    // - usuń parcelId z orders aktualnego użytkownika w Firestore
+                    db.collection("parcels").document(parcel.getId())
+                            .update("status", "active")
+                            .addOnSuccessListener(unused -> {
+                                db.collection("users").document(currentUser.getUid())
+                                        .update("orders", FieldValue.arrayRemove(parcel.getId()))
+                                        .addOnSuccessListener(aVoid -> {
+                                            Toast.makeText(this, "Reservation cancelled", Toast.LENGTH_SHORT).show();
+                                            parcelList.remove(parcel);
+                                            adapter.notifyDataSetChanged();
+                                        })
+                                        .addOnFailureListener(e ->
+                                                Toast.makeText(this, "Failed to update orders", Toast.LENGTH_SHORT).show());
+                            })
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(this, "Failed to update parcel status", Toast.LENGTH_SHORT).show());
+                },
 
+                // onParcelClick
                 parcel -> {
                     Intent intent = new Intent(this, ParcelActivity.class);
                     intent.putExtra("parcelId", parcel.getId());
                     startActivity(intent);
                 }
         );
+
 
         arrowBack.setOnClickListener(v -> finish()); // back button
 

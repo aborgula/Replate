@@ -28,6 +28,7 @@ import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -121,6 +122,9 @@ public class HomeActivity extends AppCompatActivity {
             if (userId != null) {
                 openUserProfile(userId);
             }
+        }else if(getIntent().getBooleanExtra("openOrdersFragment", false)){
+            replaceFragment(new OrdersFragment());
+            binding.bottomNavigationView.setSelectedItemId(R.id.orders);
         }else{
             replaceFragment(new PickupFragment());
         }
@@ -1141,7 +1145,7 @@ imageRef.putBytes(imageBytes)
             parcelData.put("timestamp", FieldValue.serverTimestamp());
             parcelData.put("status", "active");
 
-            db.collection("parcels")
+            /**db.collection("parcels")
                     .add(parcelData)
                     .addOnSuccessListener(documentReference -> {
                         progressDialog.dismiss();
@@ -1167,11 +1171,50 @@ imageRef.putBytes(imageBytes)
                         price = 0.0;
                         selectedDay = "today";
                         dialog.dismiss();
+
+
+
                     })
                     .addOnFailureListener(e -> {
                         progressDialog.dismiss();
                         Toast.makeText(this, "Failed to save parcel: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
+                    });**/
+
+            new Handler().postDelayed(() -> {
+                db.collection("parcels")
+                        .add(parcelData)
+                        .addOnSuccessListener(documentReference -> {
+                            progressDialog.dismiss();
+                            Toast.makeText(this, "Parcel added!", Toast.LENGTH_SHORT).show();
+                            String parcelId = documentReference.getId();
+
+                            db.collection("users").document(userId)
+                                    .update("parcelIds", FieldValue.arrayUnion(parcelId))
+                                    .addOnSuccessListener(aVoid -> Log.d("Firestore", "Parcel ID added to user"))
+                                    .addOnFailureListener(e -> Log.e("Firestore", "Failed to update user: " + e.getMessage()));
+
+                            // Resetuj dane
+                            title = "";
+                            description = "";
+                            selectedTags.clear();
+                            startTime = "";
+                            endTime = "";
+                            selectedFullAddress = "";
+                            selectedPlaceId = "";
+                            addressToPlaceIdMap.clear();
+                            selectedParcelImageUri = null;
+                            phoneNumber = "";
+                            price = 0.0;
+                            selectedDay = "today";
+                            dialog.dismiss();
+
+                        })
+                        .addOnFailureListener(e -> {
+                            progressDialog.dismiss();
+                            Toast.makeText(this, "Failed to save parcel: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        });
+            },  1000);//60 * 1000); // minuta
+
 
         });
 
@@ -1297,13 +1340,15 @@ imageRef.putBytes(imageBytes)
         Bundle bundle = new Bundle();
         bundle.putString("userId", userId);
         profileFragment.setArguments(bundle);
-        Log.d("qqq", "w opeuserprofile()... w homeactivity userid: " + userId);
 
         getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.frame_layout, profileFragment)
                 .addToBackStack(null)
                 .commit();
+
+        binding.bottomNavigationView.setSelectedItemId(R.id.profile);
+
     }
 
 }
