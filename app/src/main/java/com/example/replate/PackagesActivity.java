@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -50,6 +51,8 @@ public class PackagesActivity extends AppCompatActivity {
 
                 // onDeleteClick
                 parcel -> {
+                    Log.d("ggg", "w pierwszym parcel");
+
                     AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
                             .setTitle("Delete parcel")
                             .setMessage("Are you sure you want to delete this parcel?")
@@ -76,8 +79,9 @@ public class PackagesActivity extends AppCompatActivity {
                             ContextCompat.getColor(this, R.color.yellow));
                 },
 
-                // onCancelClick (nowa funkcja, którą musisz dodać)
                 parcel -> {
+                    Log.d("ggg", "w drugim parcel");
+
                     // Tutaj dodaj logikę anulowania rezerwacji paczki:
                     // - zmień status paczki na "active"
                     // - usuń parcelId z orders aktualnego użytkownika w Firestore
@@ -100,6 +104,7 @@ public class PackagesActivity extends AppCompatActivity {
 
                 // onParcelClick
                 parcel -> {
+                    Log.d("ggg", "w trzecim parcel");
                     Intent intent = new Intent(this, ParcelActivity.class);
                     intent.putExtra("parcelId", parcel.getId());
                     startActivity(intent);

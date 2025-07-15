@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#ffffff"
+    android:layout_marginTop="@dimen/margin_top"
+    android:orientation="vertical"
+    >
+    <LinearLayout
+        android:paddingVertical="15dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@color/white"
+        android:elevation="6dp">
+        <ImageView
+            android:id="@+id/arrowback"
+            android:layout_marginStart="25dp"
+            android:layout_width="24dp"
+            android:layout_height="33dp"
+            android:src="@drawable/ic_arrow_back"/>
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:layout_marginEnd="60dp"
+            android:layout_gravity="center"
+            android:layout_height="wrap_content"
+            android:textColor="#C3000000"
+            android:textSize="20dp"
+            android:textStyle="bold"
+            android:text="Summary"/>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_marginTop="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal">
+        <ImageView
+            android:id="@+id/parcel_image"
+            android:layout_width="90dp"
+            android:layout_height="90dp"
+            android:src="@drawable/image_profile"
+            android:scaleType="centerCrop"
+            android:background="@drawable/background_circle_photo"
+            android:clipToOutline="true"
+            android:focusable="true" />
+    </LinearLayout>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Surprise parcel"
+        android:textStyle="bold"
+        android:textSize="19dp"
+        android:textAlignment="center"
+        android:textColor="@color/black"/>
+
+    <LinearLayout
+
+        android:layout_marginTop="15dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingHorizontal="12dp"
+      >
+
+        <!-- Pickup tag -->
+        <TextView
+
+            android:layout_marginEnd="16dp"
+            android:id="@+id/pickupLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pick up tomorrow"
+            android:paddingVertical="3dp"
+            android:paddingHorizontal="10dp"
+            android:textSize="14dp"
+            android:textStyle="bold"
+            android:textColor="@color/brown"
+            android:backgroundTint="@color/yellow"
+            android:background="@drawable/edittext_search_city"
+            android:layout_gravity="center_vertical" />
+
+        <!-- Time text -->
+        <TextView
+            android:paddingVertical="3dp"
+            android:id="@+id/timeLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="12:00 - 16:00"
+            android:textSize="16dp"
+            android:textColor="@android:color/black"
+            android:layout_gravity="end" />
+    </LinearLayout>
+    <View
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginTop="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#85D9D9D9"
+        />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="PAYMENT"
+        android:letterSpacing="0.1"
+        android:textSize="13dp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:layout_marginStart="20dp"/>
+
+    <LinearLayout
+        android:id="@+id/paymentMethod"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="3dp"
+        android:background="@drawable/bordered_background"
+        android:gravity="center_vertical"
+        android:layout_margin="16dp">
+
+        <!-- Ikonka po lewej -->
+        <ImageView
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:src="@drawable/ic_przelewy24"
+            android:contentDescription="Left icon"
+            android:layout_marginEnd="8dp" />
+
+        <!-- Tekst -->
+        <TextView
+            android:id="@+id/payment"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Przelewy24"
+            android:textSize="16sp"
+            android:textColor="@android:color/black" />
+
+        <!-- Ikonka po prawej -->
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_edit"
+            app:tint="#9A9A9A"
+            android:contentDescription="Right icon" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:backgroundTint="#70CCCCCC"
+        android:background="@drawable/bordered_background"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="14dp"
+        android:layout_marginHorizontal="16dp"
+        android:gravity="center_vertical">
+
+        <!-- Tekst po lewej -->
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Total"
+            android:textStyle="bold"
+            android:textSize="18dp"
+            android:textColor="@android:color/black" />
+
+        <!-- Tekst po prawej -->
+        <TextView
+            android:id="@+id/rightText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="10 zł"
+            android:textStyle="bold"
+            android:textSize="18dp"
+            android:textColor="@android:color/black" />
+    </LinearLayout>
+
+    <TextView
+        android:layout_marginTop="50dp"
+        android:backgroundTint="@color/yellow"
+        android:layout_marginHorizontal="16dp"
+        android:id="@+id/reservebuybtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Reserve"
+        android:paddingVertical="10dp"
+        android:textSize="16dp"
+        android:textAlignment="center"
+        android:textColor="@color/brown"
+        android:textStyle="bold"
+        android:background="@drawable/edittext_search_city"/>
+
+
+</LinearLayout>

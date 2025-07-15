@@ -223,7 +223,6 @@ public class LoginActivity extends AppCompatActivity {
                                                                     })
                                                                     .addOnFailureListener(e -> {
                                                                         Toast.makeText(this, "Failed to update token", Toast.LENGTH_SHORT).show();
-                                                                        goToMain(); // przejdź mimo błędu
                                                                     });
                                                         } else {
                                                             Toast.makeText(this, "Couldn't get FCM token", Toast.LENGTH_SHORT).show();
@@ -232,7 +231,6 @@ public class LoginActivity extends AppCompatActivity {
                                                     });
                                         } else {
                                             Toast.makeText(this, "User data not found", Toast.LENGTH_SHORT).show();
-                                            goToMain();
                                         }
 
                                         // Zapisz lokalnie że zalogowany
@@ -243,10 +241,9 @@ public class LoginActivity extends AppCompatActivity {
                                     })
                                     .addOnFailureListener(e -> {
                                         Toast.makeText(this, "Error reading user data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                        goToMain(); // przejdź mimo błędu
                                     });
                         } else {
-                            goToMain(); // fallback
+                           // goToMain(); // fallback
                         }
                     } else {
                         Toast.makeText(this, "Authentication failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();

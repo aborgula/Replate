@@ -42,6 +42,8 @@ public class ParcelActivity extends AppCompatActivity {
     private ImageButton favButton;
     private boolean isLiked;
     private Double price;
+    private String title, description, startTime, endTime, day, address, creatorId;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,15 +128,27 @@ public class ParcelActivity extends AppCompatActivity {
                                 rescueButton.setTextColor(ContextCompat.getColor(this, android.R.color.white));
 
                                 rescueButton.setOnClickListener(v -> {
-                                    db.collection("parcels").document(parcelId)
-                                            .delete()
-                                            .addOnSuccessListener(unused -> {
-                                                Toast.makeText(this, "Parcel cancelled", Toast.LENGTH_SHORT).show();
-                                                setResult(RESULT_OK, new Intent().putExtra("deleted", true));
-                                                finish();
+                                    AlertDialog dialog = new AlertDialog.Builder(this)
+                                            .setTitle("Delete Parcel")
+                                            .setMessage("Less waste, more taste – but this one’s about to go. Are you sure?")
+                                            .setPositiveButton("Yes", (dialogInterface, which) -> {
+                                                db.collection("parcels").document(parcelId)
+                                                        .delete()
+                                                        .addOnSuccessListener(unused -> {
+                                                            Toast.makeText(this, "Parcel deleted", Toast.LENGTH_SHORT).show();
+                                                            setResult(RESULT_OK, new Intent().putExtra("deleted", true));
+                                                            finish();
+                                                        })
+                                                        .addOnFailureListener(e -> Toast.makeText(this, "Failed to delete parcel", Toast.LENGTH_SHORT).show());
                                             })
-                                            .addOnFailureListener(e -> Toast.makeText(this, "Failed to cancel", Toast.LENGTH_SHORT).show());
+                                            .setNegativeButton("No", null)
+                                            .create();
+
+                                    dialog.show();
+                                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(this, R.color.brown));
+                                    dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(this, R.color.yellow));
                                 });
+
 
                             } else if (currentUserId != null && creatorId != null) {
                                 favButton.setVisibility(View.VISIBLE);
@@ -214,33 +228,28 @@ public class ParcelActivity extends AppCompatActivity {
                                             });
 
                                     rescueButton.setOnClickListener(v -> {
-                                        if (price != null && price == 0.0) {
-                                            db.collection("parcels").document(parcelId)
-                                                    .update("status", "reserved")
-                                                    .addOnSuccessListener(unused -> {
-                                                        db.collection("users").document(currentUserId)
-                                                                .update("orders", FieldValue.arrayUnion(parcelId))
-                                                                .addOnSuccessListener(aVoid -> {
-                                                                    Toast.makeText(this, "Parcel reserved!", Toast.LENGTH_SHORT).show();
-                                                                    startActivity(new Intent(ParcelActivity.this, HomeActivity.class).putExtra("openOrdersFragment", true));
-                                                                    finish();
-                                                                })
-                                                                .addOnFailureListener(e -> Toast.makeText(this, "Failed to reserve parcel", Toast.LENGTH_SHORT).show());
-                                                    })
-                                                    .addOnFailureListener(e -> Toast.makeText(this, "Failed to reserve parcel", Toast.LENGTH_SHORT).show());
-                                        } else {
-                                            Toast.makeText(this, "This parcel is not free — coming soon", Toast.LENGTH_SHORT).show();
-                                        }
+                                        Intent intent = new Intent(ParcelActivity.this, SummaryActivity.class);
+                                        intent.putExtra("parcelId", parcelId);
+                                        intent.putExtra("title", title);
+                                        intent.putExtra("description", description);
+                                        intent.putExtra("startTime", startTime);
+                                        intent.putExtra("endTime", endTime);
+                                        intent.putExtra("day", day);
+                                        intent.putExtra("address", address);
+                                        intent.putExtra("price", price);
+                                        intent.putExtra("creatorId", creatorId);
+                                        startActivity(intent);
                                     });
+
                                 }
                             }
 
-                            String title = documentSnapshot.getString("title");
-                            String description = documentSnapshot.getString("description");
-                            String startTime = documentSnapshot.getString("startTime");
-                            String endTime = documentSnapshot.getString("endTime");
-                            String day = documentSnapshot.getString("day");
-                            String address = documentSnapshot.getString("address");
+                            title = documentSnapshot.getString("title");
+                            description = documentSnapshot.getString("description");
+                            startTime = documentSnapshot.getString("startTime");
+                            endTime = documentSnapshot.getString("endTime");
+                            day = documentSnapshot.getString("day");
+                            address = documentSnapshot.getString("address");
                             price = documentSnapshot.getDouble("price");
                             Double rating = documentSnapshot.getDouble("rating");
 

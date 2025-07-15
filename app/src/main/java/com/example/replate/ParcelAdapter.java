@@ -79,19 +79,14 @@ public class ParcelAdapter extends RecyclerView.Adapter<ParcelAdapter.ParcelView
             holder.deleteButton.setText("Delete");
             holder.deleteButton.setVisibility(View.VISIBLE);
             holder.deleteButton.setOnClickListener(v -> deleteClickListener.onDeleteClick(parcel));
-
-            // Nie reaguj na kliknięcie całego elementu
-            holder.itemView.setOnClickListener(null);
-
         } else {
             // Paczka zarezerwowana przez aktualnego użytkownika (nie jest jego własnością)
             holder.deleteButton.setText("Cancel");
             holder.deleteButton.setVisibility(View.VISIBLE);
             holder.deleteButton.setOnClickListener(v -> cancelClickListener.onCancelClick(parcel));
-
-            // Kliknięcie na paczkę wywołuje parcelClickListener
-            holder.itemView.setOnClickListener(v -> parcelClickListener.onParcelClick(parcel));
         }
+        holder.itemView.setOnClickListener(v -> parcelClickListener.onParcelClick(parcel));
+
     }
 
 
