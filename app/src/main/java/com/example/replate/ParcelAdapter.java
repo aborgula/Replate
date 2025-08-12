@@ -73,7 +73,6 @@ public class ParcelAdapter extends RecyclerView.Adapter<ParcelAdapter.ParcelView
             holder.image.setImageResource(R.drawable.photo_mixed);
         }
 
-        // **TUTAJ ZMIANA:**
         if (parcel.getUserId().equals(currentUserId)) {
             // Paczka należy do aktualnego użytkownika - pokaż Delete
             holder.deleteButton.setText("Delete");

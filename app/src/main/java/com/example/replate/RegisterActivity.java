@@ -260,6 +260,7 @@ public class RegisterActivity extends AppCompatActivity {
                                         userData.put("address", null);
                                         userData.put("likedBy", new ArrayList<String>());
                                         userData.put("orders", new ArrayList<String>());
+                                        //userData.put("orders", new HashMap<String, String>());
                                         userData.put("fcmToken", token);
                                         userData.put("notificationsEnabled", true);
 

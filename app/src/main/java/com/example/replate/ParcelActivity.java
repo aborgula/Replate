@@ -42,7 +42,7 @@ public class ParcelActivity extends AppCompatActivity {
     private ImageButton favButton;
     private boolean isLiked;
     private Double price;
-    private String title, description, startTime, endTime, day, address, creatorId;
+    private String title, description, startTime, endTime, date, address, creatorId;
 
 
     @Override
@@ -228,18 +228,38 @@ public class ParcelActivity extends AppCompatActivity {
                                             });
 
                                     rescueButton.setOnClickListener(v -> {
-                                        Intent intent = new Intent(ParcelActivity.this, SummaryActivity.class);
-                                        intent.putExtra("parcelId", parcelId);
-                                        intent.putExtra("title", title);
-                                        intent.putExtra("description", description);
-                                        intent.putExtra("startTime", startTime);
-                                        intent.putExtra("endTime", endTime);
-                                        intent.putExtra("day", day);
-                                        intent.putExtra("address", address);
-                                        intent.putExtra("price", price);
-                                        intent.putExtra("creatorId", creatorId);
-                                        startActivity(intent);
+                                        Log.d("www", "Kliknięto rescueButton - start onClick");
+
+                                        Log.d("www", "parcelId: " + parcelId);
+                                        Log.d("www", "title: " + title);
+                                        Log.d("www", "description: " + description);
+                                        Log.d("www", "startTime: " + startTime);
+                                        Log.d("www", "endTime: " + endTime);
+                                        Log.d("www", "date: " + date);
+                                        Log.d("www", "address: " + address);
+                                        Log.d("www", "price: " + price);
+                                        Log.d("www", "creatorId: " + creatorId);
+
+                                        try {
+                                            Intent intent = new Intent(ParcelActivity.this, SummaryActivity.class);
+                                            intent.putExtra("parcelId", parcelId);
+                                            intent.putExtra("title", title);
+                                            intent.putExtra("description", description);
+                                            intent.putExtra("startTime", startTime);
+                                            intent.putExtra("endTime", endTime);
+                                            intent.putExtra("day", date);
+                                            intent.putExtra("address", address);
+                                            intent.putExtra("price", price);
+                                            intent.putExtra("creatorId", creatorId);
+
+                                            Log.d("www", "Intent gotowy, startActivity za chwilę...");
+                                            startActivity(intent);
+                                            Log.d("www", "startActivity wykonane");
+                                        } catch (Exception e) {
+                                            Toast.makeText(ParcelActivity.this, "Błąd: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                        }
                                     });
+
 
                                 }
                             }
@@ -248,7 +268,7 @@ public class ParcelActivity extends AppCompatActivity {
                             description = documentSnapshot.getString("description");
                             startTime = documentSnapshot.getString("startTime");
                             endTime = documentSnapshot.getString("endTime");
-                            day = documentSnapshot.getString("day");
+                            date = documentSnapshot.getString("date");
                             address = documentSnapshot.getString("address");
                             price = documentSnapshot.getDouble("price");
                             Double rating = documentSnapshot.getDouble("rating");

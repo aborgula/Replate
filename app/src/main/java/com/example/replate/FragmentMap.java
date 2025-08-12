@@ -157,7 +157,7 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
 
         // Odczytaj filtr daty z SharedPreferences
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        String selectedDate = prefs.getString("selectedDate", null); // może być null, jeśli nie wybrano filtru
+        String selectedDate = prefs.getString("selectedDate", "Today"); // może być null, jeśli nie wybrano filtru
 
         db.collection("parcels")
                 .whereEqualTo("status", "active")

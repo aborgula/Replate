@@ -25,8 +25,12 @@ import android.widget.Toast;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -82,7 +86,13 @@ public class FragmentList extends Fragment {
     private void loadParcelsAndDisplay() {
         String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        String selectedDate = prefs.getString("selectedDate", null);
+        String storedDate = prefs.getString("selectedDate", "Today");
+        if (storedDate == null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            storedDate = sdf.format(Calendar.getInstance().getTime());
+        }
+        final String selectedDate = storedDate;
+
         int filterStart = prefs.getInt("startTimeMinutes", 0);
         int filterEnd = prefs.getInt("endTimeMinutes", 1439);
 
@@ -118,6 +128,7 @@ public class FragmentList extends Fragment {
                                 }
                             }
 
+                            // Filtrowanie po dacie
                             // Filtrowanie po dacie
                             if (showParcel && selectedDate != null) {
                                 String parcelDate = document.getString("date");

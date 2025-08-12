@@ -26,9 +26,11 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -211,35 +213,75 @@ public class PickupFragment extends Fragment {
 
     private void deleteExpiredParcels() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                .format(Calendar.getInstance().getTime());
+
+        SimpleDateFormat fullFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+
+        String now = fullFormat.format(Calendar.getInstance().getTime());
+        Log.d("DeleteParcel", "Aktualny czas: " + now);
 
         db.collection("parcels")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        String parcelDate = doc.getString("date");
+                        String parcelDate = doc.getString("date");       // np. 2025-08-08
+                        String parcelTime = doc.getString("endTime");    // np. 00:30
+                        String startTime = doc.getString("startTime");   // np. 22:30
                         String parcelId = doc.getId();
                         String userId = doc.getString("userId");
 
-                        if (parcelDate != null && parcelDate.compareTo(today) < 0) {
-                            // Najpierw usuń parcelId z użytkownika
-                            if (userId != null) {
-                                db.collection("users").document(userId)
-                                        .update("parcelIds", FieldValue.arrayRemove(parcelId))
-                                        .addOnSuccessListener(aVoid -> Log.d("DeleteParcel", "Removed parcelId from user: " + parcelId))
-                                        .addOnFailureListener(e -> Log.e("DeleteParcel", "Failed to update user for parcel: " + parcelId, e));
-                            }
+                        if (parcelDate != null && parcelTime != null) {
+                            String parcelDateTime = parcelDate + " " + parcelTime;
+                            Log.d("DeleteParcel", "Paczka " + parcelId + ": data i godzina końca = " + parcelDateTime);
 
-                            // Następnie usuń paczkę
-                            db.collection("parcels").document(parcelId)
-                                    .delete()
-                                    .addOnSuccessListener(aVoid -> Log.d("DeleteParcel", "Deleted expired parcel: " + parcelId))
-                                    .addOnFailureListener(e -> Log.e("DeleteParcel", "Failed to delete: " + parcelId, e));
+                            try {
+                                Date nowDate = fullFormat.parse(now);
+                                Date parcelEndDate = fullFormat.parse(parcelDateTime);
+
+                                // Sprawdzenie, czy koniec jest po północy (endTime < startTime)
+                                if (startTime != null) {
+                                    Date endOnly = timeFormat.parse(parcelTime);
+                                    Date startOnly = timeFormat.parse(startTime);
+
+                                    if (endOnly != null && startOnly != null && endOnly.before(startOnly)) {
+                                        Calendar cal = Calendar.getInstance();
+                                        cal.setTime(parcelEndDate);
+                                        cal.add(Calendar.DAY_OF_MONTH, 1);
+                                        parcelEndDate = cal.getTime();
+                                        Log.d("DeleteParcel", "Godzina końcowa po północy -> przesunięto na: " + fullFormat.format(parcelEndDate));
+                                    }
+                                }
+
+                                if (parcelEndDate != null && nowDate != null) {
+                                    if (parcelEndDate.before(nowDate)) {
+                                        Log.d("DeleteParcel", "Paczka " + parcelId + " jest przeterminowana i zostanie usunięta.");
+
+                                        // Usuń parcelId z users
+                                        if (userId != null) {
+                                            db.collection("users").document(userId)
+                                                    .update("parcelIds", FieldValue.arrayRemove(parcelId))
+                                                    .addOnSuccessListener(aVoid -> Log.d("DeleteParcel", "Usunięto parcelId z usera: " + parcelId))
+                                                    .addOnFailureListener(e -> Log.e("DeleteParcel", "Błąd przy aktualizacji usera: " + parcelId, e));
+                                        }
+
+                                        // Usuń paczkę
+                                        db.collection("parcels").document(parcelId)
+                                                .delete()
+                                                .addOnSuccessListener(aVoid -> Log.d("DeleteParcel", "Usunięto paczkę: " + parcelId))
+                                                .addOnFailureListener(e -> Log.e("DeleteParcel", "Błąd przy usuwaniu paczki: " + parcelId, e));
+                                    } else {
+                                        Log.d("DeleteParcel", "Paczka " + parcelId + " NIE jest przeterminowana.");
+                                    }
+                                }
+                            } catch (ParseException e) {
+                                Log.e("DeleteParcel", "Błąd parsowania daty dla paczki: " + parcelId, e);
+                            }
+                        } else {
+                            Log.w("DeleteParcel", "Brak daty lub godziny w paczce: " + parcelId);
                         }
                     }
                 })
-                .addOnFailureListener(e -> Log.e("DeleteParcel", "Failed to fetch parcels", e));
+                .addOnFailureListener(e -> Log.e("DeleteParcel", "Nie udało się pobrać paczek", e));
     }
 
 }

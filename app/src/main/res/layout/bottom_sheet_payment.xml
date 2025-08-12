@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:elevation="6dp"
+    android:padding="24dp"
+>
+
+    <TextView
+        android:layout_gravity="center_horizontal"
+        android:id="@+id/paymentTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Payment method"
+        android:textSize="18sp"
+        android:textColor="@color/black"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
+<LinearLayout
+    android:id="@+id/transfer"
+    android:gravity="center_vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+<ImageView
+    android:layout_width="40dp"
+    android:layout_height="40dp"
+    android:src="@drawable/ic_przelewy24"/>
+    <TextView
+        android:textStyle="bold"
+        android:paddingStart="15dp"
+        android:id="@+id/przelewyOption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Przelewy24"
+        android:background="?android:attr/selectableItemBackground"
+        android:clickable="true" />
+</LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#ddd"
+        android:layout_marginVertical="8dp"/>
+
+    <LinearLayout
+        android:id="@+id/cash"
+        android:gravity="center_vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <ImageView
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:src="@drawable/ic_cash"/>
+        <TextView
+            android:textStyle="bold"
+            android:paddingStart="15dp"
+            android:id="@+id/cashOption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cash"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true" />
+    </LinearLayout>
+
+</LinearLayout>

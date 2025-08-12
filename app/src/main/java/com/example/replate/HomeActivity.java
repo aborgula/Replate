@@ -853,7 +853,7 @@ public class HomeActivity extends AppCompatActivity {
         AlertDialog dialog = builder.create();
 
         // Ustaw cenę
-        addprice.setText(String.format("%.2f", price));
+        //addprice.setText(String.format("%.2f", price));
 
         // Jeśli phoneNumber już jest ustawiony – wpisz
         if (phoneNumber != null && !phoneNumber.isEmpty()) {

@@ -102,7 +102,7 @@ public class FilterActivity extends AppCompatActivity {
         final boolean[] todaySelected = {false};
         final boolean[] tomorrowSelected = {false};
 
-        String selectedDate = prefs.getString("selectedDate", null);
+        String selectedDate = prefs.getString("selectedDate", "Today");
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         Calendar calendar = Calendar.getInstance();
         String todayDate = sdf.format(calendar.getTime());
@@ -199,7 +199,6 @@ public class FilterActivity extends AppCompatActivity {
                 .edit()
                 .putStringSet("selectedChips", selected)
                 .apply();
-        Log.d("selectedtags", "Zapisano tagi: " + selected);
     }
 
     private void setFilterButtonActive(MaterialButton button, int bgColor, int textColor) {
