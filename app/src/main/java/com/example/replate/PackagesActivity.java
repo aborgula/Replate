@@ -51,37 +51,33 @@ public class PackagesActivity extends AppCompatActivity {
 
                 // onDeleteClick
                 parcel -> {
-                    Log.d("ggg", "w pierwszym parcel");
-
                     AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
-                            .setTitle("Delete parcel")
-                            .setMessage("Are you sure you want to delete this parcel?")
-                            .setPositiveButton("Yes", (d, which) -> {
+                            .setTitle("Take back your parcel?")
+                            .setMessage("Once removed, nobody will be able to rescue it. Still want to recall it?")
+                            .setPositiveButton("Yes, take it back", (d, which) -> {
                                 db.collection("parcels").document(parcel.getId())
                                         .delete()
                                         .addOnSuccessListener(unused -> {
                                             parcelList.remove(parcel);
                                             adapter.notifyDataSetChanged();
-                                            Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
+                                            Toast.makeText(this, "Parcel removed ✅", Toast.LENGTH_SHORT).show();
                                         })
                                         .addOnFailureListener(e ->
-                                                Toast.makeText(this, "Failed to delete", Toast.LENGTH_SHORT).show());
+                                                Toast.makeText(this, "Failed to remove ❌", Toast.LENGTH_SHORT).show());
                             })
-                            .setNegativeButton("Cancel", null)
+                            .setNegativeButton("No, keep it", null)
                             .create();
 
                     dialog.show();
 
-                    // Zmiana kolorów przycisków
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(
                             ContextCompat.getColor(this, R.color.brown));
                     dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(
                             ContextCompat.getColor(this, R.color.yellow));
                 },
 
-                parcel -> {
-                    Log.d("ggg", "w drugim parcel");
 
+                parcel -> {
                     // Tutaj dodaj logikę anulowania rezerwacji paczki:
                     // - zmień status paczki na "active"
                     // - usuń parcelId z orders aktualnego użytkownika w Firestore
@@ -104,7 +100,6 @@ public class PackagesActivity extends AppCompatActivity {
 
                 // onParcelClick
                 parcel -> {
-                    Log.d("ggg", "w trzecim parcel");
                     Intent intent = new Intent(this, ParcelActivity.class);
                     intent.putExtra("parcelId", parcel.getId());
                     startActivity(intent);
@@ -129,8 +124,6 @@ public class PackagesActivity extends AppCompatActivity {
     }
 
     private void loadParcelsForUser(String userId) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
         db.collection("parcels")
                 .whereEqualTo("userId", userId)
                 .get()
@@ -141,8 +134,18 @@ public class PackagesActivity extends AppCompatActivity {
                         String title = doc.getString("title");
                         String image = doc.getString("imageBase64");
                         String parcelUserId = doc.getString("userId");
-                        parcelList.add(new Parcel(id, title, image, parcelUserId));
+                        String ownerConfirmed = doc.getString("ownerconfirmed"); // dodaj
+                        String status = doc.getString("status");                 // dodaj
 
+                        Parcel parcel = new Parcel();
+                        parcel.setId(id);
+                        parcel.setTitle(title);
+                        parcel.setImageBase64(image);
+                        parcel.setUserId(parcelUserId);
+                        parcel.setOwnerConfirmed(ownerConfirmed);
+                        parcel.setStatus(status);
+
+                        parcelList.add(parcel);
                     }
                     adapter.notifyDataSetChanged();
                 })
@@ -150,5 +153,6 @@ public class PackagesActivity extends AppCompatActivity {
                     Toast.makeText(this, "Error loading parcels", Toast.LENGTH_SHORT).show();
                 });
     }
+
 
 }

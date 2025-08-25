@@ -76,6 +76,25 @@
             app:bump_vibration="50"
             />
 
+        <com.ncorti.slidetoact.SlideToActView
+            android:layout_marginHorizontal="22dp"
+            android:layout_marginBottom="20dp"
+            android:id="@+id/pickedupSlide"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            app:text="PICKED UP &amp; SAVED"
+            android:elevation="6dp"
+            app:slider_locked="false"
+            card_view:area_margin="-4dp"
+            card_view:text_style="bold"
+            card_view:text_color="@color/brown"
+            card_view:outer_color="@color/yellow"
+            card_view:inner_color="@color/brown"
+            card_view:icon_margin="11dp"
+            card_view:slider_icon_color="@color/yellow"
+            app:bump_vibration="50"
+            />
+
 
 
     </LinearLayout>

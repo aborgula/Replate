@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:app="http://schemas.android.com/apk/res-auto"
+     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:layout_marginHorizontal="20dp"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/rounded_rect_white"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/dialogTitle"
+        android:text="Share your feedback"
+        android:textSize="22sp"
+        android:textColor="@color/black"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="12dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <LinearLayout
+        android:layout_marginVertical="10dp"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/star1"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:src="@drawable/star_empty" />
+
+        <ImageView
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:id="@+id/star2"
+            android:src="@drawable/star_empty"/>
+        <ImageView
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:id="@+id/star3"
+            android:src="@drawable/star_empty"/>
+        <ImageView
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:id="@+id/star4"
+            android:src="@drawable/star_empty"/>
+        <ImageView
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:id="@+id/star5"
+            android:src="@drawable/star_empty"/>
+
+    </LinearLayout>
+
+    <EditText
+        android:layout_marginBottom="20dp"
+        android:id="@+id/descriptionEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Add the details of your treasure"
+        android:inputType="textMultiLine"
+        android:gravity="top|start"
+        android:lines="4"
+        android:maxLength="160"
+        android:scrollbars="vertical"
+        android:ellipsize="end"
+        android:background="@android:drawable/edit_text"
+        android:padding="12dp"/>
+
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/skipBtn"
+            android:text="Not now"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/brown" />
+        <Button
+            android:layout_marginStart="10dp"
+            android:id="@+id/rateBtn"
+            android:text="Rate user"
+            android:textColor="@color/brown"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/yellow" />
+    </LinearLayout>
+
+</LinearLayout>

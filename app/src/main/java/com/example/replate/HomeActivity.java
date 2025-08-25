@@ -1144,6 +1144,8 @@ imageRef.putBytes(imageBytes)
             parcelData.put("price", price);
             parcelData.put("timestamp", FieldValue.serverTimestamp());
             parcelData.put("status", "active");
+            parcelData.put("ownerconfirmed", "no");
+            parcelData.put("finished", false);
 
             /**db.collection("parcels")
                     .add(parcelData)
