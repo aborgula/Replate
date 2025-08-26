@@ -44,11 +44,22 @@ public class PackagesActivity extends AppCompatActivity {
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
         db = FirebaseFirestore.getInstance();
 
+        userId = getIntent().getStringExtra("userId");
+
+        if (userId == null) {
+            Toast.makeText(this, "User ID not found", Toast.LENGTH_SHORT).show();
+            finish(); // lub załaduj aktualnego zalogowanego
+            return;
+        }
+
+        boolean isOwnerProfile = currentUser != null && userId.equals(currentUser.getUid());
+
+        // Tworzymy adapter z przekazaniem isOwnerProfile
         adapter = new ParcelAdapter(
                 this,
                 parcelList,
                 currentUser != null ? currentUser.getUid() : "",
-
+                isOwnerProfile, // 🔑 tutaj
                 // onDeleteClick
                 parcel -> {
                     AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
@@ -75,12 +86,8 @@ public class PackagesActivity extends AppCompatActivity {
                     dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(
                             ContextCompat.getColor(this, R.color.yellow));
                 },
-
-
+                // onCancelClick
                 parcel -> {
-                    // Tutaj dodaj logikę anulowania rezerwacji paczki:
-                    // - zmień status paczki na "active"
-                    // - usuń parcelId z orders aktualnego użytkownika w Firestore
                     db.collection("parcels").document(parcel.getId())
                             .update("status", "active")
                             .addOnSuccessListener(unused -> {
@@ -97,7 +104,6 @@ public class PackagesActivity extends AppCompatActivity {
                             .addOnFailureListener(e ->
                                     Toast.makeText(this, "Failed to update parcel status", Toast.LENGTH_SHORT).show());
                 },
-
                 // onParcelClick
                 parcel -> {
                     Intent intent = new Intent(this, ParcelActivity.class);
@@ -106,22 +112,13 @@ public class PackagesActivity extends AppCompatActivity {
                 }
         );
 
-
-        arrowBack.setOnClickListener(v -> finish()); // back button
-
+        arrowBack.setOnClickListener(v -> finish());
         recyclerView.setAdapter(adapter);
 
-        userId = getIntent().getStringExtra("userId");
-
-        if (userId == null) {
-            Toast.makeText(this, "User ID not found", Toast.LENGTH_SHORT).show();
-            finish(); // lub załaduj aktualnego zalogowanego
-            return;
-        }
-
-        // Dalej ładuj paczki tylko tego użytkownika
+        // Załaduj paczki użytkownika
         loadParcelsForUser(userId);
     }
+
 
     private void loadParcelsForUser(String userId) {
         db.collection("parcels")

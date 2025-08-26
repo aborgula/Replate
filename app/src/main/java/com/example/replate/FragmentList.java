@@ -178,7 +178,26 @@ public class FragmentList extends Fragment {
                                     price.setText("Free");
                                 }
 
-                                rating.setText(String.valueOf(document.getDouble("rating")));
+                                // ✅ Pobieramy rating użytkownika (creatorId), a nie parceli
+                                if (creatorId != null) {
+                                    db.collection("users").document(creatorId)
+                                            .get()
+                                            .addOnSuccessListener(creatorDoc -> {
+                                                if (creatorDoc.exists()) {
+                                                    Double userRating = creatorDoc.getDouble("rating");
+                                                    if (userRating != null && userRating > 0) {
+                                                        rating.setText("" + String.format(Locale.US, "%.1f", userRating));
+                                                    } else {
+                                                        rating.setText("No ratings");
+                                                    }
+                                                } else {
+                                                    rating.setText("No ratings");
+                                                }
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                rating.setText("No ratings");
+                                            });
+                                }
 
                                 parcelContainer.addView(parcelView);
                                 String documentId = document.getId();

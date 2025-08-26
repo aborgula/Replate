@@ -44,11 +44,11 @@ public class ParcelActivity extends AppCompatActivity {
     private Double price;
     private String title, description, startTime, endTime, date, address, creatorId;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_parcel);
+
         CardView stickyFooter = findViewById(R.id.stickyFooter);
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         String parcelId = getIntent().getStringExtra("parcelId");
@@ -56,6 +56,7 @@ public class ParcelActivity extends AppCompatActivity {
         ImageButton backButton = findViewById(R.id.backButton);
         LinearLayout parcelOwnerLayout = findViewById(R.id.parcelOwner);
         favButton = findViewById(R.id.favButton);
+
         backButton.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -70,16 +71,18 @@ public class ParcelActivity extends AppCompatActivity {
                     .addOnSuccessListener(documentSnapshot -> {
                         if (documentSnapshot.exists()) {
 
-                            String creatorId = documentSnapshot.getString("userId");
+                            creatorId = documentSnapshot.getString("userId");
                             String currentUserId = FirebaseAuth.getInstance().getCurrentUser() != null
                                     ? FirebaseAuth.getInstance().getCurrentUser().getUid()
                                     : null;
 
                             TextView userLogin = findViewById(R.id.userLogin);
                             ImageView userAvatar = findViewById(R.id.userAvatar);
+                            TextView ratingView = findViewById(R.id.ratings);
 
                             if (creatorId != null) {
 
+                                // kliknięcie w profil właściciela paczki
                                 parcelOwnerLayout.setOnClickListener(v -> {
                                     Intent intent = new Intent(ParcelActivity.this, HomeActivity.class);
                                     intent.putExtra("showUserId", creatorId);
@@ -87,6 +90,7 @@ public class ParcelActivity extends AppCompatActivity {
                                     startActivity(intent);
                                 });
 
+                                // pobierz dane usera (login, avatar, rating)
                                 db.collection("users").document(creatorId)
                                         .get()
                                         .addOnSuccessListener(userDoc -> {
@@ -110,16 +114,24 @@ public class ParcelActivity extends AppCompatActivity {
                                                 } else {
                                                     userAvatar.setImageResource(R.drawable.image_profile);
                                                 }
+
+                                                // pobierz rating usera
+                                                Double rating = userDoc.getDouble("rating");
+                                                ratingView.setText((rating != null && rating > 0)
+                                                        ? "" + String.format(Locale.US, "%.1f", rating)
+                                                        : "No ratings");
                                             }
                                         })
                                         .addOnFailureListener(e -> {
                                             userLogin.setText("Unknown user");
                                             userAvatar.setImageResource(R.drawable.image_profile);
+                                            ratingView.setText("No ratings");
                                         });
                             }
 
                             Button rescueButton = findViewById(R.id.rescueButton);
 
+                            // logika dla właściciela paczki
                             if (currentUserId != null && creatorId != null && currentUserId.equals(creatorId)) {
                                 favButton.setVisibility(View.GONE);
                                 stickyFooter.setCardBackgroundColor(Color.parseColor("#FDFFDADD"));
@@ -149,7 +161,7 @@ public class ParcelActivity extends AppCompatActivity {
                                     dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(this, R.color.yellow));
                                 });
 
-
+                                // logika dla innych użytkowników
                             } else if (currentUserId != null && creatorId != null) {
                                 favButton.setVisibility(View.VISIBLE);
                                 stickyFooter.setCardBackgroundColor(Color.parseColor("#FDFFFADA"));
@@ -228,18 +240,6 @@ public class ParcelActivity extends AppCompatActivity {
                                             });
 
                                     rescueButton.setOnClickListener(v -> {
-                                        Log.d("www", "Kliknięto rescueButton - start onClick");
-
-                                        Log.d("www", "parcelId: " + parcelId);
-                                        Log.d("www", "title: " + title);
-                                        Log.d("www", "description: " + description);
-                                        Log.d("www", "startTime: " + startTime);
-                                        Log.d("www", "endTime: " + endTime);
-                                        Log.d("www", "date: " + date);
-                                        Log.d("www", "address: " + address);
-                                        Log.d("www", "price: " + price);
-                                        Log.d("www", "creatorId: " + creatorId);
-
                                         try {
                                             Intent intent = new Intent(ParcelActivity.this, SummaryActivity.class);
                                             intent.putExtra("parcelId", parcelId);
@@ -251,19 +251,15 @@ public class ParcelActivity extends AppCompatActivity {
                                             intent.putExtra("address", address);
                                             intent.putExtra("price", price);
                                             intent.putExtra("creatorId", creatorId);
-
-                                            Log.d("www", "Intent gotowy, startActivity za chwilę...");
                                             startActivity(intent);
-                                            Log.d("www", "startActivity wykonane");
                                         } catch (Exception e) {
                                             Toast.makeText(ParcelActivity.this, "Błąd: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                                         }
                                     });
-
-
                                 }
                             }
 
+                            // dane paczki
                             title = documentSnapshot.getString("title");
                             description = documentSnapshot.getString("description");
                             startTime = documentSnapshot.getString("startTime");
@@ -271,7 +267,6 @@ public class ParcelActivity extends AppCompatActivity {
                             date = documentSnapshot.getString("date");
                             address = documentSnapshot.getString("address");
                             price = documentSnapshot.getDouble("price");
-                            Double rating = documentSnapshot.getDouble("rating");
 
                             SharedPreferences prefs = this.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
                             String whenText = prefs.getString("when", "Today");
@@ -285,12 +280,10 @@ public class ParcelActivity extends AppCompatActivity {
                             ((TextView) findViewById(R.id.time)).setText(timeText);
                             ((TextView) findViewById(R.id.address)).setText(address);
 
-                            TextView ratingView = findViewById(R.id.ratings);
-                            ratingView.setText((rating != null && rating > 0) ? "🔥 " + String.format(Locale.US, "%.1f", rating) : "No ratings");
-
                             TextView priceTextView = findViewById(R.id.priceTag);
                             priceTextView.setText((price != null && price == 0.0) ? "Free" : String.format(Locale.US, "%.2f zł", price != null ? price : 0.0));
 
+                            // mapa
                             if (address != null && map != null) {
                                 Geocoder geocoder = new Geocoder(this, Locale.getDefault());
                                 try {
@@ -306,13 +299,13 @@ public class ParcelActivity extends AppCompatActivity {
                                 }
                             }
 
+                            // klik na mapę -> Google Maps
                             String placeId = documentSnapshot.getString("placeId");
                             if (placeId != null && !placeId.isEmpty()) {
                                 findViewById(R.id.mapFragment).setOnClickListener(v -> {
                                     Uri gmmIntentUri = Uri.parse("https://www.google.com/maps/search/?api=1&query=Google&query_place_id=" + placeId);
                                     Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
                                     mapIntent.setPackage("com.google.android.apps.maps");
-
                                     if (mapIntent.resolveActivity(getPackageManager()) != null) {
                                         startActivity(mapIntent);
                                     } else {
@@ -321,6 +314,7 @@ public class ParcelActivity extends AppCompatActivity {
                                 });
                             }
 
+                            // tagi
                             LinearLayout tagContainer = findViewById(R.id.tagContainer);
                             tagContainer.removeAllViews();
                             List<String> tags = (List<String>) documentSnapshot.get("tags");

@@ -92,7 +92,7 @@ public class ProfileFragment extends Fragment {
                         }
                     }
 
-                    loadUserRating(finalUserId); // ⬅️ też zmodyfikuj funkcję oceniania
+                    loadUserRating(finalUserId);
                 });
 
         packagesbtn.setOnClickListener(v -> {
@@ -228,27 +228,6 @@ public class ProfileFragment extends Fragment {
                 .addOnFailureListener(e -> Log.e("Firestore", "Error saving image", e));
     }
 
-   /** private void loadUserRating() {
-        if (currentUser == null) return;
-
-        firestore.collection("users").document(currentUser.getUid())
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        Double rating = documentSnapshot.getDouble("rating");
-
-                        if (rating == null) {
-                            rating = 6.0; // domyślnie
-                        }
-
-                        displayStars(rating);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("Firestore", "Error fetching rating", e);
-                    displayStars(6.0); // domyślnie przy błędzie
-                });
-    }**/
    private void loadUserRating(String userId) {
        firestore.collection("users").document(userId)
                .get()
