@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/itemCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="7dp"
+    card_view:cardCornerRadius="16dp"
+    card_view:cardElevation="6dp">
+
+<LinearLayout
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:orientation="horizontal"
+android:padding="12dp"
+android:gravity="center_vertical">
+
+<!-- Okrąg z oceną/liczbą -->
+<TextView
+    android:id="@+id/reviewScoreCircle"
+    android:layout_width="48dp"
+    android:layout_height="48dp"
+    android:gravity="center"
+    android:text="5"
+    android:textSize="22dp"
+    android:textColor="@android:color/white"
+    android:background="@drawable/circle_background"
+    android:layout_marginEnd="12dp" />
+
+<!-- Prawa część: recenzja i autor -->
+<LinearLayout
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:orientation="vertical">
+
+    <!-- Treść recenzji -->
+    <TextView
+        android:id="@+id/reviewText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="This food was amazing, thank you so much!"
+        android:textSize="14sp"
+        android:textColor="@android:color/black" />
+
+    <!-- Nazwa autora w prawym dolnym rogu -->
+    <TextView
+        android:id="@+id/reviewAuthorName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:textStyle="italic"
+        android:text="- John Doe"
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginTop="4dp" />
+
+</LinearLayout>
+
+</LinearLayout>
+
+    </androidx.cardview.widget.CardView>

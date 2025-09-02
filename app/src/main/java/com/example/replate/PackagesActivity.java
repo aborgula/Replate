@@ -123,6 +123,7 @@ public class PackagesActivity extends AppCompatActivity {
     private void loadParcelsForUser(String userId) {
         db.collection("parcels")
                 .whereEqualTo("userId", userId)
+                .whereEqualTo("finished", false)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     parcelList.clear();
@@ -131,8 +132,8 @@ public class PackagesActivity extends AppCompatActivity {
                         String title = doc.getString("title");
                         String image = doc.getString("imageBase64");
                         String parcelUserId = doc.getString("userId");
-                        String ownerConfirmed = doc.getString("ownerconfirmed"); // dodaj
-                        String status = doc.getString("status");                 // dodaj
+                        String ownerConfirmed = doc.getString("ownerconfirmed");
+                        String status = doc.getString("status");
 
                         Parcel parcel = new Parcel();
                         parcel.setId(id);

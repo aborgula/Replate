@@ -38,7 +38,7 @@ public class ProfileFragment extends Fragment {
     private FirebaseStorage storage;
     private FirebaseFirestore firestore;
     private FirebaseUser currentUser;
-    private CardView logoutBtn, settingsbtn, packagesbtn;
+    private CardView logoutBtn, settingsbtn, packagesbtn, reviewsbtn;
     private TextView userLogin;
 
 
@@ -61,6 +61,7 @@ public class ProfileFragment extends Fragment {
         firestore = FirebaseFirestore.getInstance();
         userLogin = view.findViewById(R.id.userLogin);
         packagesbtn = view.findViewById(R.id.packagesbtn);
+        reviewsbtn = view.findViewById(R.id.reviewsbtn);
 
         String passedUserId = null;
         Bundle args = getArguments();
@@ -71,7 +72,7 @@ public class ProfileFragment extends Fragment {
         String finalUserId;
         if (passedUserId != null) {
             finalUserId = passedUserId; // pokazujemy innego użytkownika
-            logoutBtn.setVisibility(View.GONE);   // ukryj przyciski, bo to nie profil użytkownika
+            logoutBtn.setVisibility(View.GONE);
             settingsbtn.setVisibility(View.GONE);
             profileImage.setClickable(false);     // nie pozwalaj zmieniać zdjęcia
         } else {
@@ -97,6 +98,20 @@ public class ProfileFragment extends Fragment {
 
         packagesbtn.setOnClickListener(v -> {
             Intent intent = new Intent(getContext(), PackagesActivity.class);
+
+            // Sprawdź, czy to profil innego użytkownika (czyli czy przekazano userId w Bundle)
+            if (getArguments() != null && getArguments().containsKey("userId")) {
+                String userId = getArguments().getString("userId");
+                intent.putExtra("userId", userId); // inny użytkownik
+            } else if (currentUser != null) {
+                intent.putExtra("userId", currentUser.getUid()); // własny profil
+            }
+
+            startActivity(intent);
+        });
+
+        reviewsbtn.setOnClickListener(v -> {
+            Intent intent = new Intent(getContext(), ReviewsActivity.class);
 
             // Sprawdź, czy to profil innego użytkownika (czyli czy przekazano userId w Bundle)
             if (getArguments() != null && getArguments().containsKey("userId")) {

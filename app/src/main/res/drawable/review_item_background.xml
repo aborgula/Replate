@@ -1,0 +1,5 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FAFFFFFF"/> <!-- półprzezroczysta biel, #80 = 50% alpha -->
+    <corners android:radius="16dp"/> <!-- zaokrąglone rogi -->
+</shape>
