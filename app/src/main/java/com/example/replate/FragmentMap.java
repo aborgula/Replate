@@ -47,6 +47,10 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
     private PlacesClient placesClient;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private List<String> currentSelectedChips = new ArrayList<>();
+    private View layoutEmptyMap;
+    private com.airbnb.lottie.LottieAnimationView emptyMapAnim;
+    private SupportMapFragment mapFragment;
+
 
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1; // Kod do żądania uprawnień
@@ -78,6 +82,9 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
         }
 
         placesClient = Places.createClient(requireContext());
+
+        layoutEmptyMap = view.findViewById(R.id.layoutEmptyMap);
+        emptyMapAnim = view.findViewById(R.id.emptyMapAnim);
 
         SupportMapFragment mapFragment = (SupportMapFragment)
                 getChildFragmentManager().findFragmentById(R.id.map_fragment);
@@ -163,6 +170,8 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
                 .whereEqualTo("status", "active")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
+                    boolean hasParcels = false;
+
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         String creatorId = document.getString("userId");
                         // Pomijamy paczki użytkownika
@@ -215,6 +224,7 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
                         }
 
                         if (showParcel) {
+                            hasParcels = true;
                             String placeId = document.getString("placeId");
                             String title = document.getString("title");
 
@@ -224,6 +234,7 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
                             }
                         }
                     }
+
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(requireContext(), "Failed to load parcels: " + e.getMessage(), Toast.LENGTH_SHORT).show();

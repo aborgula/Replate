@@ -90,7 +90,6 @@ public class PickupFragment extends Fragment {
             startActivity(intent);
         });
 
-        // 🔽 ZMIANA: przekazujemy parcelLauncher do FragmentList
         FragmentList initialListFragment = new FragmentList();
         initialListFragment.setParcelLauncher(parcelLauncher);
 
@@ -111,7 +110,6 @@ public class PickupFragment extends Fragment {
         }
 
         listButton.setOnClickListener(v -> {
-            // 🔽 ZMIANA: nowy fragment + przekazanie parcelLauncher
             FragmentList fragmentList = new FragmentList();
             fragmentList.setParcelLauncher(parcelLauncher);
 

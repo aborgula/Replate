@@ -1,16 +1,53 @@
-<?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/scrollView"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_marginBottom="50dp"
-    android:fillViewport="true">
-    <LinearLayout
-        android:id="@+id/parcelContainer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingBottom="16dp" />
+    android:layout_height="match_parent">
 
-</ScrollView>
+    <!-- ScrollView z paczkami -->
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="50dp"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:id="@+id/parcelContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="16dp" />
+    </ScrollView>
+
+    <!-- Pusty stan: animacja + tekst -->
+    <LinearLayout
+        android:id="@+id/layoutEmptyParcels"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:paddingBottom="100dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/emptyParcelsAnim"
+            android:layout_width="250dp"
+            android:layout_height="250dp"
+            app:lottie_rawRes="@raw/nopackagesanimation"
+            app:lottie_autoPlay="true"
+            app:lottie_loop="true" />
+
+        <TextView
+            android:id="@+id/emptyParcelsText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No parcels available right now… check back later!"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            android:gravity="center"
+            android:paddingHorizontal="56dp"/>
+    </LinearLayout>
+
+</FrameLayout>

@@ -12,6 +12,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,6 +41,8 @@ public class OrdersFragment extends Fragment {
 
     private FirebaseFirestore db;
     private LinearLayout ordersContainer;
+    private ScrollView ordersScrollView;
+    private LinearLayout emptyOrdersLayout;
     private int currentSelectedRating = 0;
 
 
@@ -49,6 +52,8 @@ public class OrdersFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_orders, container, false);
         db = FirebaseFirestore.getInstance();
         ordersContainer = view.findViewById(R.id.ordersContainer);
+        ordersScrollView = view.findViewById(R.id.ordersScrollView);
+        emptyOrdersLayout = view.findViewById(R.id.emptyOrdersLayout);
         loadUserParcels();
         return view;
     }
@@ -63,28 +68,28 @@ public class OrdersFragment extends Fragment {
             return;
         }
 
-        // Pobierz dokument użytkownika
         db.collection("users").document(currentUserId)
                 .get()
                 .addOnSuccessListener(userDoc -> {
                     if (!userDoc.exists()) {
                         Toast.makeText(getContext(), "User data not found", Toast.LENGTH_SHORT).show();
+                        showEmptyState();
                         return;
                     }
 
                     // Pobierz listę zamówień (parcelId) z pola orders
                     List<String> parcelIds = (List<String>) userDoc.get("orders");
 
-
                     if (parcelIds == null || parcelIds.isEmpty()) {
-                        Toast.makeText(getContext(), "No orders found", Toast.LENGTH_SHORT).show();
+                        showEmptyState();
                         return;
                     }
 
                     ordersContainer.removeAllViews();
+                    ordersScrollView.setVisibility(View.VISIBLE);
+                    emptyOrdersLayout.setVisibility(View.GONE);
 
-                    // Firestore ogranicza whereIn do 10 elementów na zapytanie,
-                    // jeśli więcej, trzeba robić podział na mniejsze partie - tutaj przykład dla max 10
+                    // Firestore ogranicza whereIn do 10 elementów
                     List<List<String>> batches = new ArrayList<>();
                     int batchSize = 10;
                     for (int i = 0; i < parcelIds.size(); i += batchSize) {
@@ -98,90 +103,93 @@ public class OrdersFragment extends Fragment {
                                 .whereEqualTo("finished", false)
                                 .get()
                                 .addOnSuccessListener(parcelSnapshots -> {
-                                    for (QueryDocumentSnapshot parcelDoc : parcelSnapshots) {
-                                        View itemView = LayoutInflater.from(getContext()).inflate(R.layout.layout_order, ordersContainer, false);
+                                    if (parcelSnapshots.isEmpty() && ordersContainer.getChildCount() == 0) {
+                                        showEmptyState();
+                                    } else {
+                                        for (QueryDocumentSnapshot parcelDoc : parcelSnapshots) {
+                                            View itemView = LayoutInflater.from(getContext()).inflate(R.layout.layout_order, ordersContainer, false);
 
-                                        TextView titleView = itemView.findViewById(R.id.itemTitle);
-                                        ImageView imageView = itemView.findViewById(R.id.itemImage);
-                                        Button deleteButton = itemView.findViewById(R.id.deleteButton);
-                                        SlideToActView pickupButton = itemView.findViewById(R.id.pickupSlide);
-                                        SlideToActView pickedupButton = itemView.findViewById(R.id.pickedupSlide);
-                                        pickedupButton.setVisibility(View.GONE);
-                                        String ownerPhone = parcelDoc.getString("phone");
-                                        String parcelDate = parcelDoc.getString("date");
-                                        String parcelStartTime = parcelDoc.getString("startTime");
-                                        String parcelEndTime = parcelDoc.getString("endTime");
+                                            TextView titleView = itemView.findViewById(R.id.itemTitle);
+                                            ImageView imageView = itemView.findViewById(R.id.itemImage);
+                                            Button deleteButton = itemView.findViewById(R.id.deleteButton);
+                                            SlideToActView pickupButton = itemView.findViewById(R.id.pickupSlide);
+                                            SlideToActView pickedupButton = itemView.findViewById(R.id.pickedupSlide);
+                                            pickedupButton.setVisibility(View.GONE);
 
-                                        boolean ready = isParcelReadyNow(parcelDate, parcelStartTime, parcelEndTime);
-                                        if (ready) {
-                                            pickupButton.setVisibility(View.VISIBLE);
+                                            String ownerPhone = parcelDoc.getString("phone");
+                                            String parcelDate = parcelDoc.getString("date");
+                                            String parcelStartTime = parcelDoc.getString("startTime");
+                                            String parcelEndTime = parcelDoc.getString("endTime");
 
-                                            // Wyłącz reakcję na samo kliknięcie
-                                            pickupButton.setOnClickListener(null);
+                                            boolean ready = isParcelReadyNow(parcelDate, parcelStartTime, parcelEndTime);
+                                            if (ready) {
+                                                pickupButton.setVisibility(View.VISIBLE);
+                                                pickupButton.setOnClickListener(null);
+                                                pickupButton.setOnSlideCompleteListener(slide -> {
+                                                    showParcelDialog(parcelDoc.getId(), ownerPhone);
+                                                });
+                                            } else {
+                                                pickupButton.setVisibility(View.GONE);
+                                            }
 
-                                            // Reakcja na przesunięcie
-                                            pickupButton.setOnSlideCompleteListener(slide -> {
-                                                showParcelDialog(parcelDoc.getId(), ownerPhone);
+                                            String title = parcelDoc.getString("title");
+                                            String imageUrl = parcelDoc.getString("imageUrl");
+                                            String documentId = parcelDoc.getId();
+
+                                            titleView.setText(title != null ? title : "Untitled");
+
+                                            if (imageUrl != null && !imageUrl.isEmpty()) {
+                                                Glide.with(this).load(imageUrl).into(imageView);
+                                            } else {
+                                                imageView.setImageResource(R.drawable.photo_mixed);
+                                            }
+
+                                            deleteButton.setText("Cancel");
+                                            deleteButton.setOnClickListener(v -> {
+                                                AlertDialog dialog = new AlertDialog.Builder(getContext())
+                                                        .setTitle("Cancel Reservation")
+                                                        .setMessage("The parcel was ready for its second life! Really cancel the rescue?")
+                                                        .setPositiveButton("Yes", (dialogInterface, which) -> {
+                                                            db.collection("parcels").document(documentId)
+                                                                    .update("status", "active")
+                                                                    .addOnSuccessListener(aVoid -> {
+                                                                        db.collection("users").document(currentUserId)
+                                                                                .update("orders", FieldValue.arrayRemove(documentId))
+                                                                                .addOnSuccessListener(unused -> {
+                                                                                    Toast.makeText(getContext(), "Reservation cancelled", Toast.LENGTH_SHORT).show();
+                                                                                    ordersContainer.removeView(itemView);
+
+                                                                                    if (ordersContainer.getChildCount() == 0) {
+                                                                                        showEmptyState();
+                                                                                    }
+                                                                                })
+                                                                                .addOnFailureListener(e ->
+                                                                                        Toast.makeText(getContext(), "Failed to update user orders", Toast.LENGTH_SHORT).show());
+                                                                    })
+                                                                    .addOnFailureListener(e ->
+                                                                            Toast.makeText(getContext(), "Failed to update parcel status", Toast.LENGTH_SHORT).show());
+                                                        })
+                                                        .setNegativeButton("No", null)
+                                                        .create();
+
+                                                dialog.show();
+                                                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(
+                                                        ContextCompat.getColor(getContext(), R.color.brown)
+                                                );
+                                                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(
+                                                        ContextCompat.getColor(getContext(), R.color.yellow)
+                                                );
                                             });
 
+                                            itemView.setOnClickListener(v -> {
+                                                Intent intent = new Intent(getContext(), ParcelActivity.class);
+                                                intent.putExtra("parcelId", documentId);
+                                                intent.putExtra("reserved", true);
+                                                startActivity(intent);
+                                            });
 
-                                        } else {
-                                            pickupButton.setVisibility(View.GONE);
+                                            ordersContainer.addView(itemView);
                                         }
-
-                                        String title = parcelDoc.getString("title");
-                                        String imageUrl = parcelDoc.getString("imageUrl");
-                                        String documentId = parcelDoc.getId();
-
-                                        titleView.setText(title != null ? title : "Untitled");
-
-                                        if (imageUrl != null && !imageUrl.isEmpty()) {
-                                            Glide.with(this).load(imageUrl).into(imageView);
-                                        } else {
-                                            imageView.setImageResource(R.drawable.photo_mixed);
-                                        }
-
-                                        deleteButton.setText("Cancel");
-                                        deleteButton.setOnClickListener(v -> {
-                                            AlertDialog dialog = new AlertDialog.Builder(getContext())
-                                                    .setTitle("Cancel Reservation")
-                                                    .setMessage("The parcel was ready for its second life! Really cancel the rescue?")
-                                                    .setPositiveButton("Yes", (dialogInterface, which) -> {
-                                                        db.collection("parcels").document(documentId)
-                                                                .update("status", "active")
-                                                                .addOnSuccessListener(aVoid -> {
-                                                                    db.collection("users").document(currentUserId)
-                                                                            .update("orders", FieldValue.arrayRemove(documentId))
-                                                                            .addOnSuccessListener(unused -> {
-                                                                                Toast.makeText(getContext(), "Reservation cancelled", Toast.LENGTH_SHORT).show();
-                                                                                ordersContainer.removeView(itemView);
-                                                                            })
-                                                                            .addOnFailureListener(e ->
-                                                                                    Toast.makeText(getContext(), "Failed to update user orders", Toast.LENGTH_SHORT).show());
-                                                                })
-                                                                .addOnFailureListener(e ->
-                                                                        Toast.makeText(getContext(), "Failed to update parcel status", Toast.LENGTH_SHORT).show());
-                                                    })
-                                                    .setNegativeButton("No", null)
-                                                    .create();
-
-                                            dialog.show();
-                                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(
-                                                    ContextCompat.getColor(getContext(), R.color.brown)
-                                            );
-                                            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(
-                                                    ContextCompat.getColor(getContext(), R.color.yellow)
-                                            );
-                                        });
-
-                                        itemView.setOnClickListener(v -> {
-                                            Intent intent = new Intent(getContext(), ParcelActivity.class);
-                                            intent.putExtra("parcelId", documentId);
-                                            intent.putExtra("reserved", true);
-                                            startActivity(intent);
-                                        });
-
-                                        ordersContainer.addView(itemView);
                                     }
                                 })
                                 .addOnFailureListener(e ->
@@ -191,10 +199,14 @@ public class OrdersFragment extends Fragment {
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(getContext(), "Failed to load user data: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-
-
-
     }
+
+    // Pokazuje pusty ekran
+    private void showEmptyState() {
+        ordersScrollView.setVisibility(View.GONE);
+        emptyOrdersLayout.setVisibility(View.VISIBLE);
+    }
+
 
     private boolean isParcelReadyNow(String date, String startTime, String endTime) {
         if (date == null || startTime == null || endTime == null) return false;

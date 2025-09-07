@@ -38,6 +38,7 @@ android {
 dependencies {
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation("com.airbnb.android:lottie:6.6.6")
     implementation("com.google.android.flexbox:flexbox:3.0.0")
     implementation("com.ncorti:slidetoact:0.11.0")
     implementation("com.google.firebase:firebase-storage:20.3.0")

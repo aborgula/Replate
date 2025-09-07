@@ -68,6 +68,7 @@ public class SplashScreen extends AppCompatActivity {
             } else {
                 if(isLoggedIn){
                     intent = new Intent(SplashScreen.this, HomeActivity.class);
+                    //intent = new Intent(SplashScreen.this, LottieAttempt.class);
                 }else{
                     intent = new Intent(SplashScreen.this, LoginActivity.class);
                 }

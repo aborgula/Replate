@@ -12,7 +12,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Button;
-
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -20,6 +19,7 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.airbnb.lottie.LottieAnimationView;
 import com.bumptech.glide.Glide;
 import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
@@ -38,14 +38,19 @@ public class FavouritesFragment extends Fragment {
 
     private FirebaseFirestore db;
     private FirebaseAuth auth;
+    private LottieAnimationView emptyAnim;
+    private LinearLayout layoutAnimation;
+
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_favourites, container, false);
-
+        emptyAnim = view.findViewById(R.id.emptyAnimation);
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
+        layoutAnimation = view.findViewById(R.id.layoutanimation);
 
         recyclerView = view.findViewById(R.id.favouritesRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -70,7 +75,22 @@ public class FavouritesFragment extends Fragment {
         db.collection("users").document(currentUserId).get().addOnSuccessListener(documentSnapshot -> {
             List<String> likedUserIds = (List<String>) documentSnapshot.get("likedUsers");
 
-            if (likedUserIds == null || likedUserIds.isEmpty()) return;
+            //if (likedUserIds == null || likedUserIds.isEmpty()) return;
+
+            if (likedUserIds == null || likedUserIds.isEmpty()) {
+                recyclerView.setVisibility(View.GONE);
+                layoutAnimation.setVisibility(View.VISIBLE);
+                emptyAnim.playAnimation();
+                Log.d("tt", "w pierwszym if");
+                return;
+            } else {
+                recyclerView.setVisibility(View.VISIBLE);
+                layoutAnimation.setVisibility(View.GONE);
+                emptyAnim.cancelAnimation();
+                Log.d("tt", "w drugim if");
+
+            }
+
 
             int[] loadCounter = {0}; // pomocnicza zmienna
 
@@ -78,7 +98,6 @@ public class FavouritesFragment extends Fragment {
                 db.collection("users").document(uid).get().addOnSuccessListener(userDoc -> {
                     if (userDoc.exists()) {
                         Double rating = userDoc.getDouble("rating");
-                        Log.d("rating", "rating: " + rating);
                         if (rating == null) {
                             rating = 0.0;
                         }
@@ -227,7 +246,6 @@ public class FavouritesFragment extends Fragment {
         ProfileFragment profileFragment = new ProfileFragment();
         Bundle bundle = new Bundle();
         bundle.putString("userId", userId);
-        Log.d("userid", "tu powinno byc ala3 id: " + userId);
         profileFragment.setArguments(bundle);
 
         requireActivity().getSupportFragmentManager()

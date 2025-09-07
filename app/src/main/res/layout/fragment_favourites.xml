@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".FavouritesFragment">
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -14,7 +15,41 @@
             android:id="@+id/favouritesRecyclerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:padding="8dp" />
+            android:padding="8dp"
+            android:visibility="gone"
+
+            />
+
+        <LinearLayout
+            android:id="@+id/layoutanimation"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="visible">
+
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/emptyAnimation"
+                android:layout_width="210dp"
+                android:layout_height="210dp"
+                app:lottie_rawRes="@raw/nofavourites"
+                app:lottie_autoPlay="true"
+                app:lottie_loop="true" />
+
+            <TextView
+                android:id="@+id/emptyText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No favorites here… yet! Tap around and show some love"
+                android:textSize="19dp"
+                android:textStyle="bold"
+                android:textColor="@android:color/black"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:paddingHorizontal="56dp"
+                />
+        </LinearLayout>
+
     </LinearLayout>
 
 

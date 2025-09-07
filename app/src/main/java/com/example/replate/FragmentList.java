@@ -10,6 +10,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
+
+import com.airbnb.lottie.LottieAnimationView;
 import com.google.firebase.auth.FirebaseAuth;
 
 import android.util.Log;
@@ -19,6 +21,7 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,9 +29,11 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -40,6 +45,10 @@ public class FragmentList extends Fragment {
     private List<String> currentSelectedChips = new ArrayList<>();
     private LinearLayout parcelContainer;
     private LayoutInflater layoutInflater;
+    private ScrollView scrollView;
+    private LinearLayout layoutEmptyParcels;
+    private LottieAnimationView emptyParcelsAnim;
+
 
 
     // Launcher przekazywany z PickupFragment
@@ -57,6 +66,10 @@ public class FragmentList extends Fragment {
         View view = inflater.inflate(R.layout.fragment_list, container, false);
         parcelContainer = view.findViewById(R.id.parcelContainer);
         layoutInflater = inflater;
+
+        scrollView = view.findViewById(R.id.scrollView);
+        layoutEmptyParcels = view.findViewById(R.id.layoutEmptyParcels);
+        emptyParcelsAnim = view.findViewById(R.id.emptyParcelsAnim);
 
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         Set<String> selectedChipsSet = prefs.getStringSet("selectedChips", null);
@@ -78,7 +91,6 @@ public class FragmentList extends Fragment {
         loadParcelsAndDisplay();
     }
 
-    // Publiczna metoda do ponownego załadowania
     public void loadFilteredParcels() {
         loadParcelsAndDisplay();
     }
@@ -87,18 +99,37 @@ public class FragmentList extends Fragment {
         String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         String storedDate = prefs.getString("selectedDate", "Today");
-        if (storedDate == null) {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            storedDate = sdf.format(Calendar.getInstance().getTime());
-        }
-        final String selectedDate = storedDate;
+        Log.d("www", "w loadparcelsanddisplay, storeddate: " + storedDate);
 
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        String todayString = sdf.format(Calendar.getInstance().getTime());
+
+        if (storedDate == null || storedDate.equals("Today")) {
+            storedDate = todayString;
+        } else {
+            try {
+                Date selected = sdf.parse(storedDate);
+                Date today = sdf.parse(todayString);
+
+                if (selected != null && today != null && selected.before(today)) {
+                    // 🔄 Wybrana data jest wcześniejsza niż dziś → ustawiamy na dzisiaj
+                    storedDate = todayString;
+
+                    // Opcjonalnie zaktualizuj SharedPreferences
+                    prefs.edit().putString("selectedDate", todayString).apply();
+                }
+            } catch (ParseException e) {
+                e.printStackTrace();
+                storedDate = todayString; // w razie błędu ustawiamy na dzisiaj
+            }
+        }
+
+        final String selectedDate = storedDate;
         int filterStart = prefs.getInt("startTimeMinutes", 0);
         int filterEnd = prefs.getInt("endTimeMinutes", 1439);
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        // Najpierw pobierz listę ulubionych użytkownika
         db.collection("users").document(currentUserId).get().addOnSuccessListener(userDoc -> {
             List<String> likedUsers = (List<String>) userDoc.get("likedUsers");
             if (likedUsers == null) likedUsers = new ArrayList<>();
@@ -108,7 +139,9 @@ public class FragmentList extends Fragment {
                     .whereEqualTo("status", "active")
                     .get()
                     .addOnSuccessListener(queryDocumentSnapshots -> {
+
                         parcelContainer.removeAllViews();
+                        boolean hasParcels = false;
 
                         for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                             String creatorId = document.getString("userId");
@@ -128,7 +161,6 @@ public class FragmentList extends Fragment {
                                 }
                             }
 
-                            // Filtrowanie po dacie
                             // Filtrowanie po dacie
                             if (showParcel && selectedDate != null) {
                                 String parcelDate = document.getString("date");
@@ -154,7 +186,10 @@ public class FragmentList extends Fragment {
                                 }
                             }
 
+
+
                             if (showParcel) {
+                                hasParcels = true;
                                 View parcelView = layoutInflater.inflate(R.layout.layout_package_list, parcelContainer, false);
 
                                 TextView title = parcelView.findViewById(R.id.parcelTitle);
@@ -251,6 +286,18 @@ public class FragmentList extends Fragment {
                                 });
 
                             }
+                        }
+
+                        if (hasParcels) {
+                            Log.d("www", "✅ są paczki");
+                            scrollView.setVisibility(View.VISIBLE);
+                            layoutEmptyParcels.setVisibility(View.GONE);
+                            emptyParcelsAnim.cancelAnimation();
+                        } else {
+                            Log.d("www", "❌ brak paczek");
+                            scrollView.setVisibility(View.GONE);
+                            layoutEmptyParcels.setVisibility(View.VISIBLE);
+                            emptyParcelsAnim.playAnimation();
                         }
                     })
                     .addOnFailureListener(e -> Toast.makeText(requireContext(), "Load failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
