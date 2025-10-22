@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,6 +15,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.libraries.places.api.Places;
@@ -353,5 +357,20 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
             loadParcelsAndShowMarkers();
         }
     }
+
+
+
+    private BitmapDescriptor getBitmapFromUrl(String imageUrl, int width, int height) {
+        try {
+            java.net.URL url = new java.net.URL(imageUrl);
+            Bitmap image = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+            Bitmap scaled = Bitmap.createScaledBitmap(image, width, height, false);
+            return BitmapDescriptorFactory.fromBitmap(scaled);
+        } catch (Exception e) {
+            Log.e("FragmentMap", "Failed to load image from URL: " + imageUrl + ", " + e.getMessage());
+            return BitmapDescriptorFactory.defaultMarker(); // fallback
+        }
+    }
+
 
 }

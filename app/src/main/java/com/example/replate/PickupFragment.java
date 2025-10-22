@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Paint;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
 import android.Manifest;
 
@@ -26,6 +28,7 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -192,9 +195,28 @@ public class PickupFragment extends Fragment {
             if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
                     if (location != null) {
-                        chosenLocation.setText(String.format(Locale.getDefault(), "%.4f, %.4f",
-                                location.getLatitude(), location.getLongitude()));
-                    } else {
+                        try {
+                            Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
+                            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+
+                            if (addresses != null && !addresses.isEmpty()) {
+                                String city = addresses.get(0).getLocality(); // nazwa miejscowości
+                                if (city == null) {
+                                    city = addresses.get(0).getSubAdminArea(); // np. dzielnica lub gmina
+                                }
+                                if (city == null) {
+                                    city = "Unknown location";
+                                }
+                                chosenLocation.setText(city);
+                            } else {
+                                chosenLocation.setText("Unknown location");
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            chosenLocation.setText("Unknown location");
+                        }
+                    }
+else {
                         chosenLocation.setText("Unable to fetch location.");
                     }
                 });
