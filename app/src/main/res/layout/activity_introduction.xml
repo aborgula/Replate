@@ -80,7 +80,7 @@
                 android:layout_gravity="center_horizontal"
                 android:text="Pick up surplus food"
                 android:textColor="#000000"
-                android:textSize="27sp"
+                android:textSize="27dp"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />
@@ -97,7 +97,7 @@
                 android:textStyle="bold"
                 android:text="Browse available meal packs nearby and stop good food from going to waste."
                 android:textColor="#434343"
-                android:textSize="15sp"
+                android:textSize="15dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/pickupTitle" />

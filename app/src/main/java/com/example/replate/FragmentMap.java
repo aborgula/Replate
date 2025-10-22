@@ -78,10 +78,11 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
         super.onViewCreated(view, savedInstanceState);
 
         if (!Places.isInitialized()) {
-            Places.initialize(requireContext(), "AIzaSyAwKhbg7_QX7gYKwuLRuaLYf6GXz2lAu0E");
+            Places.initialize(requireContext(), "AIzaSyA7Mm6hV5yGvXd3sn8ZqM_z9nxcfxzc2y8");
         }
 
         placesClient = Places.createClient(requireContext());
+      //  placesClient = MyApp.placesClient;
 
         layoutEmptyMap = view.findViewById(R.id.layoutEmptyMap);
         emptyMapAnim = view.findViewById(R.id.emptyMapAnim);
@@ -160,45 +161,77 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
     private void loadParcelsAndShowMarkers() {
 
         String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        if (googleMap == null) return;
+        if (googleMap == null) {
+            Log.e("FragmentMap", "googleMap is null, cannot load parcels");
+            return;
+        }
 
-        // Odczytaj filtr daty z SharedPreferences
+        // SharedPreferences
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        String selectedDate = prefs.getString("selectedDate", "Today"); // może być null, jeśli nie wybrano filtru
+        String selectedDateTmp = prefs.getString("selectedDate", "");
+
+        if (selectedDateTmp == null || selectedDateTmp.isEmpty()) {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            java.util.Calendar calendar = java.util.Calendar.getInstance();
+            String todayDate = sdf.format(calendar.getTime());
+
+            prefs.edit().putString("selectedDate", todayDate).apply();
+            selectedDateTmp = todayDate;
+
+            Log.d("FragmentMap", "selectedDate was empty, set to today: " + selectedDateTmp);
+        } else {
+            Log.d("FragmentMap", "selectedDate from prefs: " + selectedDateTmp);
+        }
+
+        final String finalSelectedDate = selectedDateTmp; // finalna zmienna do lambdy
 
         db.collection("parcels")
                 .whereEqualTo("status", "active")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
+                    Log.d("FragmentMap", "Fetched " + queryDocumentSnapshots.size() + " parcels from Firestore");
+
                     boolean hasParcels = false;
 
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        String parcelId = document.getId();
                         String creatorId = document.getString("userId");
+                        Log.d("FragmentMap", "Processing parcelId=" + parcelId + ", creatorId=" + creatorId);
+
                         // Pomijamy paczki użytkownika
                         if (creatorId != null && creatorId.equals(currentUserId)) {
+                            Log.d("FragmentMap", "Skipping own parcel: " + parcelId);
                             continue;
                         }
 
                         List<String> tags = (List<String>) document.get("tags");
                         if (tags == null) tags = new ArrayList<>();
+                        Log.d("FragmentMap", "Parcel tags: " + tags);
 
                         boolean showParcel = currentSelectedChips == null || currentSelectedChips.isEmpty();
+                        Log.d("FragmentMap", "Initial showParcel: " + showParcel);
 
                         // Filtrowanie po chipach
                         if (!showParcel) {
                             for (String tag : tags) {
                                 if (currentSelectedChips.contains(tag)) {
                                     showParcel = true;
+                                    Log.d("FragmentMap", "Parcel " + parcelId + " passed chip filter with tag: " + tag);
                                     break;
                                 }
                             }
                         }
 
                         // Filtrowanie po dacie
-                        if (showParcel && selectedDate != null) {
-                            String parcelDate = document.getString("date"); // format np. "2025-06-17"
-                            if (!selectedDate.equals(parcelDate)) {
+                        if (showParcel) {
+                            String parcelDate = document.getString("date"); // np. "2025-06-17"
+                            Log.d("FragmentMap", "Parcel date: " + parcelDate + ", selectedDate: " + finalSelectedDate);
+
+                            if (!finalSelectedDate.equals(parcelDate)) {
                                 showParcel = false;
+                                Log.d("FragmentMap", "Parcel " + parcelId + " filtered out by date");
+                            } else {
+                                Log.d("FragmentMap", "Parcel " + parcelId + " passed date filter");
                             }
                         }
 
@@ -216,10 +249,14 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
                                 int parcelStartMin = timeStringToMinutes(parcelStartStr);
                                 int parcelEndMin = timeStringToMinutes(parcelEndStr);
 
-                                // Jeśli paczka kończy się przed początkiem filtra lub zaczyna po końcu filtra — pomijamy ją
                                 if (parcelEndMin < filterStart || parcelStartMin > filterEnd) {
                                     showParcel = false;
+                                    Log.d("FragmentMap", "Parcel " + parcelId + " filtered out by time: " + parcelStartStr + "-" + parcelEndStr);
+                                } else {
+                                    Log.d("FragmentMap", "Parcel " + parcelId + " passed time filter: " + parcelStartStr + "-" + parcelEndStr);
                                 }
+                            } else {
+                                Log.d("FragmentMap", "Parcel " + parcelId + " has invalid time format");
                             }
                         }
 
@@ -227,37 +264,56 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
                             hasParcels = true;
                             String placeId = document.getString("placeId");
                             String title = document.getString("title");
+                            Log.d("FragmentMap", "Parcel " + parcelId + " will be shown on map with placeId=" + placeId + " and title=" + title);
 
                             if (placeId != null && !placeId.isEmpty()) {
-                                String parcelId = document.getId();
-                                fetchPlaceAndAddMarker(placeId, title, document.getId());
+                                fetchPlaceAndAddMarker(placeId, title, parcelId);
+                            } else {
+                                Log.d("FragmentMap", "Parcel " + parcelId + " has null/empty placeId");
                             }
                         }
                     }
 
+                    if (!hasParcels) {
+                        Log.d("FragmentMap", "No parcels to show after filtering");
+                    }
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(requireContext(), "Failed to load parcels: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Log.e("FragmentMap", "Failed to load parcels: " + e.getMessage());
                 });
-
     }
+
 
     private void fetchPlaceAndAddMarker(String placeId, String title, String parcelId) {
-        List<Place.Field> placeFields = Arrays.asList(Place.Field.LAT_LNG);
+        Log.d("FragmentMap", "fetchPlaceAndAddMarker called: placeId=" + placeId + ", title=" + title + ", parcelId=" + parcelId);
 
+        List<Place.Field> placeFields = Arrays.asList(Place.Field.LAT_LNG);
         FetchPlaceRequest request = FetchPlaceRequest.newInstance(placeId, placeFields);
 
-        placesClient.fetchPlace(request).addOnSuccessListener(response -> {
-            Place place = response.getPlace();
-            LatLng latLng = place.getLatLng();
-            if (latLng != null && googleMap != null) {
-                Marker marker = googleMap.addMarker(new MarkerOptions().position(latLng).title(title));
-                marker.setTag(parcelId); // 👈 przypisanie parcelId
-            }
-        }).addOnFailureListener(exception -> {
-            Log.e("FragmentMap", "Place not found: " + exception.getMessage());
-        });
+        placesClient.fetchPlace(request)
+                .addOnSuccessListener(response -> {
+                    Place place = response.getPlace();
+                    LatLng latLng = place.getLatLng();
+                    Log.d("FragmentMap", "Place fetched: " + place + ", latLng=" + latLng);
+
+                    if (latLng != null && googleMap != null) {
+                        Marker marker = googleMap.addMarker(new MarkerOptions().position(latLng).title(title));
+                        if (marker != null) {
+                            Log.d("FragmentMap", "Marker added for parcelId=" + parcelId + " at " + latLng);
+                            marker.setTag(parcelId);
+                        } else {
+                            Log.e("FragmentMap", "Failed to add marker for parcelId=" + parcelId);
+                        }
+                    } else {
+                        Log.e("FragmentMap", "LatLng is null or googleMap is null for parcelId=" + parcelId);
+                    }
+                })
+                .addOnFailureListener(exception -> {
+                    Log.e("FragmentMap", "Place not found for placeId=" + placeId + ": " + exception.getMessage());
+                });
     }
+
 
     private void fallbackToCurrentLocation() {
         try {
@@ -276,6 +332,7 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
             Log.e("FragmentMap", "SecurityException: " + e.getMessage());
         }
     }
+
 
     private int timeStringToMinutes(String timeStr) {
         String[] parts = timeStr.split(":");
