@@ -98,8 +98,12 @@ public class FragmentList extends Fragment {
     private void loadParcelsAndDisplay() {
         String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        String filterPlaceId = prefs.getString("lastPlaceId", null);
+        int selectedDistanceKm = prefs.getInt("selected_distance_km", 0);
+        Double filterLat = Double.longBitsToDouble(prefs.getLong("lastLat", Double.doubleToLongBits(0.0)));
+        Double filterLng = Double.longBitsToDouble(prefs.getLong("lastLng", Double.doubleToLongBits(0.0)));
+
         String storedDate = prefs.getString("selectedDate", "Today");
-        Log.d("www", "w loadparcelsanddisplay, storeddate: " + storedDate);
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String todayString = sdf.format(Calendar.getInstance().getTime());
@@ -128,6 +132,14 @@ public class FragmentList extends Fragment {
         int filterStart = prefs.getInt("startTimeMinutes", 0);
         int filterEnd = prefs.getInt("endTimeMinutes", 1439);
 
+        Log.d("FilterDebug", "------ FILTRY ------");
+        Log.d("FilterDebug", "PlaceId: " + filterPlaceId);
+        Log.d("FilterDebug", "Lat/Lng: " + filterLat + ", " + filterLng);
+        Log.d("FilterDebug", "Distance km: " + selectedDistanceKm);
+        Log.d("FilterDebug", "Selected date: " + selectedDate);
+        Log.d("FilterDebug", "Time range: " + filterStart + " - " + filterEnd + " min");
+        Log.d("FilterDebug", "Tags selected: " + currentSelectedChips);
+
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         db.collection("users").document(currentUserId).get().addOnSuccessListener(userDoc -> {
@@ -145,8 +157,14 @@ public class FragmentList extends Fragment {
 
                         for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                             String creatorId = document.getString("userId");
+                            String docId = document.getId();
+
+                            Log.d("FilterDebug", "------------------");
+                            Log.d("FilterDebug", "📦 Sprawdzam paczkę: " + docId + " (" + document.getString("title") + ")");
+                            Log.d("FilterDebug", "CreatorId: " + creatorId);
 
                             if (creatorId != null && creatorId.equals(currentUserId)) {
+                                Log.d("FilterDebug", "⏭ Pomijam własną paczkę");
                                 continue; // Pomijamy własne paczki
                             }
 
@@ -160,12 +178,15 @@ public class FragmentList extends Fragment {
                                     break;
                                 }
                             }
+                            Log.d("FilterDebug", "→ Po tagach: " + showParcel + " (tags=" + tags + ")");
 
                             // Filtrowanie po dacie
                             if (showParcel && selectedDate != null) {
                                 String parcelDate = document.getString("date");
                                 if (!selectedDate.equals(parcelDate)) {
                                     showParcel = false;
+                                    Log.d("FilterDebug", "❌ Odrzucono po dacie: " + parcelDate);
+
                                 }
                             }
 
@@ -182,13 +203,34 @@ public class FragmentList extends Fragment {
 
                                     if (parcelEndMin < filterStart || parcelStartMin > filterEnd) {
                                         showParcel = false;
+                                        Log.d("FilterDebug", "❌ Odrzucono po czasie: " + parcelStartStr + "-" + parcelEndStr);
+
                                     }
                                 }
                             }
 
 
+                            //Filtrowanie po odległości
+                            if (showParcel && selectedDistanceKm > 0) {
+                                Double parcelLat = document.getDouble("lat");
+                                Double parcelLng = document.getDouble("lng");
+                                if (parcelLat != null && parcelLng != null) {
+                                    float[] results = new float[1];
+                                    android.location.Location.distanceBetween(filterLat, filterLng, parcelLat, parcelLng, results);
+                                    float distanceKm = results[0] / 1000f;
+                                    Log.d("FilterDebug", "📏 Dystans do paczki: " + distanceKm + " km");
+
+                                    if (distanceKm > selectedDistanceKm) {
+                                        showParcel = false;
+                                        Log.d("FilterDebug", "❌ Odrzucono po dystansie: " + distanceKm + " km > " + selectedDistanceKm + " km");
+                                    }
+                                }else{
+                                    Log.w("FilterDebug", "⚠ Brak współrzędnych paczki!");
+                                }
+                            }
 
                             if (showParcel) {
+                                Log.d("FilterDebug", "✅ Paczka zaakceptowana!");
                                 hasParcels = true;
                                 View parcelView = layoutInflater.inflate(R.layout.layout_package_list, parcelContainer, false);
 
@@ -289,12 +331,12 @@ public class FragmentList extends Fragment {
                         }
 
                         if (hasParcels) {
-                            Log.d("www", "✅ są paczki");
+                            Log.d("FilterDebug", "✅ Są paczki do wyświetlenia");
                             scrollView.setVisibility(View.VISIBLE);
                             layoutEmptyParcels.setVisibility(View.GONE);
                             emptyParcelsAnim.cancelAnimation();
                         } else {
-                            Log.d("www", "❌ brak paczek");
+                            Log.d("FilterDebug", "❌ Nie znaleziono paczek po filtrach");
                             scrollView.setVisibility(View.GONE);
                             layoutEmptyParcels.setVisibility(View.VISIBLE);
                             emptyParcelsAnim.playAnimation();

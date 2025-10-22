@@ -46,10 +46,13 @@ import android.widget.Toast;
 import com.example.replate.databinding.ActivityHomeBinding;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken;
+import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.model.TypeFilter;
+import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.material.button.MaterialButton;
@@ -71,6 +74,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -99,6 +103,8 @@ public class HomeActivity extends AppCompatActivity {
     private ImageView parcelImageView;
     private TextInputEditText addphonenumber, addprice;
     private String selectedDay = "today";
+    private Double selectedLat = null;
+    private Double selectedLng = null;
     List<String> selectedTags = new ArrayList<>();
 
     @Override
@@ -764,7 +770,7 @@ public class HomeActivity extends AppCompatActivity {
                                 locationInput.setAdapter(adapter);
                                 locationInput.showDropDown();
 
-                                locationInput.setOnItemClickListener((parent, view, position, id) -> {
+                                /**locationInput.setOnItemClickListener((parent, view, position, id) -> {
                                     selectedFullAddress = (String) parent.getItemAtPosition(position);
                                     selectedPlaceId = addressToPlaceIdMap.get(selectedFullAddress);
 
@@ -774,7 +780,40 @@ public class HomeActivity extends AppCompatActivity {
                                     } else {
                                         locationInput.setError(null);
                                     }
+                                });**/
+
+                                locationInput.setOnItemClickListener((parent, view, position, id) -> {
+                                    selectedFullAddress = (String) parent.getItemAtPosition(position);
+                                    selectedPlaceId = addressToPlaceIdMap.get(selectedFullAddress);
+
+                                    if (!selectedFullAddress.matches(".*\\d+.*")) {
+                                        locationInput.setError("Please select a full address with a house number");
+                                        selectedPlaceId = null;
+                                    } else {
+                                        locationInput.setError(null);
+
+                                        // Pobranie współrzędnych
+                                        if (selectedPlaceId != null) {
+                                            List<Place.Field> placeFields = Arrays.asList(Place.Field.LAT_LNG, Place.Field.NAME);
+                                            FetchPlaceRequest fetchPlaceRequest = FetchPlaceRequest.builder(selectedPlaceId, placeFields).build();
+
+                                            placesClient.fetchPlace(fetchPlaceRequest)
+                                                    .addOnSuccessListener(placeResponse -> {   // <- zmieniliśmy nazwę na placeResponse
+                                                        if (placeResponse.getPlace().getLatLng() != null) {
+                                                            selectedLat = placeResponse.getPlace().getLatLng().latitude;
+                                                            selectedLng = placeResponse.getPlace().getLatLng().longitude;
+                                                            Log.d("AddParcel", "Selected coordinates: " + selectedLat + ", " + selectedLng);
+                                                        }
+                                                    })
+                                                    .addOnFailureListener(e -> {
+                                                        Toast.makeText(HomeActivity.this, "Failed to get coordinates", Toast.LENGTH_SHORT).show();
+                                                    });
+                                        }
+                                    }
                                 });
+
+
+
                             });
                 }
             }
@@ -791,6 +830,10 @@ public class HomeActivity extends AppCompatActivity {
                 if (location != null) {
                     double lat = location.getLatitude();
                     double lng = location.getLongitude();
+
+                    selectedLat = lat;
+                    selectedLng = lng;
+                    Log.d("AddParcel", "MyLocation coordinates: " + selectedLat + ", " + selectedLng);
 
                     Geocoder geocoder = new Geocoder(this, Locale.getDefault());
                     try {
@@ -1146,6 +1189,9 @@ imageRef.putBytes(imageBytes)
             parcelData.put("status", "active");
             parcelData.put("ownerconfirmed", "no");
             parcelData.put("finished", false);
+            parcelData.put("lat", selectedLat);
+            parcelData.put("lng", selectedLng);
+
 
             /**db.collection("parcels")
                     .add(parcelData)
@@ -1209,6 +1255,8 @@ imageRef.putBytes(imageBytes)
                             price = 0.0;
                             selectedDay = "today";
                             dialog.dismiss();
+                            selectedLat = 0.0;
+                            selectedLng = 0.0;
 
                         })
                         .addOnFailureListener(e -> {

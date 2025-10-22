@@ -68,6 +68,8 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
     private Circle currentCircle;
     private LatLng selectedLocation;
+    private LatLng tempSelectedLocation = null;
+    private String tempSelectedPlaceId = null;
 
     private static final String MAP_VIEW_BUNDLE_KEY = "MapViewBundleKey";
 
@@ -88,12 +90,16 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
         }
         placesClient = Places.createClient(this);
 
-        // === MapView ===
+        // MapView
         Bundle mapViewBundle = savedInstanceState != null ? savedInstanceState.getBundle(MAP_VIEW_BUNDLE_KEY) : null;
         mapView.onCreate(mapViewBundle);
         mapView.getMapAsync(this);
 
-        // === Autocomplete TextWatcher ===
+        // Tymczasowe zmienne do podglądu lokalizacji
+        final LatLng[] tempSelectedLocation = {null};
+        final String[] tempSelectedPlaceId = {null};
+
+        // Autocomplete TextWatcher
         searchCity.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void afterTextChanged(Editable s) {}
@@ -112,9 +118,33 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
                         for (AutocompletePrediction prediction : predictions) {
                             suggestionList.add(prediction.getFullText(null).toString());
                         }
+
                         if (!predictions.isEmpty()) {
-                            selectedPlaceId = predictions.get(0).getPlaceId(); // zapamiętaj pierwszy
+                            tempSelectedPlaceId[0] = predictions.get(0).getPlaceId(); // tylko tymczasowo
+
+                            // Podgląd lokalizacji na mapie
+                            FetchPlaceRequest placeRequest = FetchPlaceRequest.builder(
+                                    tempSelectedPlaceId[0],
+                                    Arrays.asList(Place.Field.LAT_LNG, Place.Field.NAME)
+                            ).build();
+
+                            placesClient.fetchPlace(placeRequest).addOnSuccessListener(resp -> {
+                                Place place = resp.getPlace();
+                                if (place.getLatLng() != null && googleMap != null) {
+                                    tempSelectedLocation[0] = place.getLatLng();
+                                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(tempSelectedLocation[0], 12f));
+                                    if (currentCircle != null) currentCircle.remove();
+                                    int radiusKm = getSharedPreferences("MyPrefs", MODE_PRIVATE).getInt("selected_distance_km", 5);
+                                    currentCircle = googleMap.addCircle(new CircleOptions()
+                                            .center(tempSelectedLocation[0])
+                                            .radius(radiusKm * 1000)
+                                            .strokeColor(Color.parseColor("#3300AA00"))
+                                            .fillColor(Color.parseColor("#5533CC33"))
+                                            .strokeWidth(2f));
+                                }
+                            });
                         }
+
                         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                                 ChooseLocationRangeActivity.this,
                                 android.R.layout.simple_dropdown_item_1line,
@@ -127,9 +157,8 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
             }
         });
 
-        // === Obecna lokalizacja
+        // Obecna lokalizacja
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-
         TextView useCurrentLocation = findViewById(R.id.usecurrentlocation);
         useCurrentLocation.setOnClickListener(v -> {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -139,30 +168,32 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
 
             fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
                 if (location != null && googleMap != null) {
-                    LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 12f));
-                    googleMap.addMarker(new MarkerOptions().position(userLocation).title("You're here"));
+                    tempSelectedLocation[0] = new LatLng(location.getLatitude(), location.getLongitude());
+                    tempSelectedPlaceId[0] = null;
 
-                    // Odwrócone geokodowanie - zamiana współrzędnych na adres
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(tempSelectedLocation[0], 12f));
+                    if (currentCircle != null) currentCircle.remove();
+                    int radiusKm = getSharedPreferences("MyPrefs", MODE_PRIVATE).getInt("selected_distance_km", 5);
+                    currentCircle = googleMap.addCircle(new CircleOptions()
+                            .center(tempSelectedLocation[0])
+                            .radius(radiusKm * 1000)
+                            .strokeColor(Color.parseColor("#3300AA00"))
+                            .fillColor(Color.parseColor("#5533CC33"))
+                            .strokeWidth(2f));
+
+                    // Odwrócone geokodowanie tylko do podglądu
                     Geocoder geocoder = new Geocoder(this, Locale.getDefault());
                     try {
                         List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
                         if (addresses != null && !addresses.isEmpty()) {
                             Address address = addresses.get(0);
-                            String addressLine = address.getThoroughfare(); // ulica
-                            String city = address.getLocality(); // miasto
-
                             String fullAddress = "";
-                            if (addressLine != null) fullAddress += addressLine;
-                            if (city != null) {
+                            if (address.getThoroughfare() != null) fullAddress += address.getThoroughfare();
+                            if (address.getLocality() != null) {
                                 if (!fullAddress.isEmpty()) fullAddress += ", ";
-                                fullAddress += city;
+                                fullAddress += address.getLocality();
                             }
-
-                            if (!fullAddress.isEmpty()) {
-                                searchCity.setText(fullAddress);
-                                selectedPlaceId = null; // resetujemy, bo wpisaliśmy ręcznie adres
-                            }
+                            if (!fullAddress.isEmpty()) searchCity.setText(fullAddress);
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -171,53 +202,45 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
             });
         });
 
-
-
-        // === Show Results Button ===
-        showResultBtn.setOnClickListener(v -> {
-            if (selectedPlaceId != null) {
-                FetchPlaceRequest placeRequest = FetchPlaceRequest.builder(
-                        selectedPlaceId,
-                        Arrays.asList(Place.Field.LAT_LNG, Place.Field.NAME)
-                ).build();
-
-                placesClient.fetchPlace(placeRequest).addOnSuccessListener(response -> {
-                    Place place = response.getPlace();
-                    if (place.getLatLng() != null && googleMap != null) {
-                        LatLng location = place.getLatLng();
-                        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 12f));
-                        googleMap.addMarker(new MarkerOptions().position(location).title(place.getName()));
-                        selectedLocation = location;
-
-                        // Usuń poprzednie kółko jeśli istnieje
-                        if (currentCircle != null) currentCircle.remove();
-                        int radiusKm = getSharedPreferences("MyPrefs", MODE_PRIVATE).getInt("selected_distance_km", 5);
-                        currentCircle = googleMap.addCircle(new CircleOptions()
-                                .center(location)
-                                .radius(radiusKm * 1000) // w metrach
-                                .strokeColor(Color.parseColor("#3300AA00")) // ciemniejszy zielony brzeg
-                                .fillColor(Color.parseColor("#5533CC33")) // półprzezroczyste wypełnienie
-                                .strokeWidth(2f));
-
-                        //  Zapis do SharedPreferences
-                        SharedPreferences prefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
-                        SharedPreferences.Editor editor = prefs.edit();
-                        editor.putString("lastPlaceId", selectedPlaceId);
-                        editor.putString("lastPlaceName", place.getName());
-                        editor.apply();
-
-                        Intent intent = new Intent(ChooseLocationRangeActivity.this, HomeActivity.class);
-                        startActivity(intent);
-                        finish();
-                    }
-                }).addOnFailureListener(e -> Log.e("PlacesAPI", "Place fetch failed", e));
-            }
-
-        });
-
-        // === Distance Slider ===
+        SharedPreferences prefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
         Slider distanceSlider = findViewById(R.id.distanceSlider);
         int savedKm = getSharedPreferences("MyPrefs", MODE_PRIVATE).getInt("selected_distance_km", 5);
+
+
+        // Show Results Button
+        showResultBtn.setOnClickListener(v -> {
+            // użyj nowej lokalizacji, jeśli istnieje — w przeciwnym razie poprzedniej
+            LatLng locationToSave = tempSelectedLocation[0] != null ? tempSelectedLocation[0] : selectedLocation;
+            String placeIdToSave = tempSelectedPlaceId[0] != null ? tempSelectedPlaceId[0] : prefs.getString("lastPlaceId", null);
+
+            if (locationToSave != null) {
+                int selectedKm = Math.round(distanceSlider.getValue());
+
+                editor.putString("lastPlaceId", placeIdToSave);
+                editor.putLong("lastLat", Double.doubleToLongBits(locationToSave.latitude));
+                editor.putLong("lastLng", Double.doubleToLongBits(locationToSave.longitude));
+                editor.putInt("selected_distance_km", selectedKm);
+                String placeNameToSave = searchCity.getText().toString();
+                editor.putString("lastPlaceName", placeNameToSave);
+                editor.apply();
+
+                Log.d("FilterDebug", "Saved location:");
+                Log.d("FilterDebug", "PlaceId: " + placeIdToSave);
+                Log.d("FilterDebug", "Latitude: " + locationToSave.latitude);
+                Log.d("FilterDebug", "Longitude: " + locationToSave.longitude);
+                Log.d("FilterDebug", "RadiusKm: " + selectedKm);
+
+                startActivity(new Intent(ChooseLocationRangeActivity.this, HomeActivity.class));
+                finish();
+            } else {
+                Log.w("FilterDebug", "No location available to save!");
+            }
+        });
+
+
+
+        // Distance Slider
         distanceSlider.setValue(savedKm);
 
         distanceSlider.setTrackActiveTintList(ContextCompat.getColorStateList(this, R.color.green));
@@ -225,29 +248,27 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
         distanceSlider.setThumbTintList(ContextCompat.getColorStateList(this, R.color.black));
         distanceSlider.setHaloTintList(ContextCompat.getColorStateList(this, R.color.green));
         distanceSlider.setTickTintList(ColorStateList.valueOf(Color.YELLOW));
-
         distanceSlider.setLabelFormatter(value -> ((int) value) + " km");
 
         distanceSlider.addOnChangeListener((slider, value, fromUser) -> {
             int selectedKm = Math.round(value);
-            getSharedPreferences("MyPrefs", MODE_PRIVATE)
-                    .edit()
-                    .putInt("selected_distance_km", selectedKm)
-                    .apply();
+            LatLng locationToUse = tempSelectedLocation[0] != null
+                    ? tempSelectedLocation[0]
+                    : selectedLocation; // ← użyj poprzednio zapisanej lokalizacji, jeśli nowa jeszcze nie wybrana
 
-            //  Jeśli wybrano wcześniej lokalizację i mapa gotowa, zaktualizuj kółko
-            if (selectedLocation != null && googleMap != null) {
-                if (currentCircle != null) currentCircle.remove(); // usuń stare
-
+            if (locationToUse != null && googleMap != null) {
+                if (currentCircle != null) currentCircle.remove();
                 currentCircle = googleMap.addCircle(new CircleOptions()
-                        .center(selectedLocation)
+                        .center(locationToUse)
                         .radius(selectedKm * 1000)
                         .strokeColor(Color.parseColor("#3300AA00"))
                         .fillColor(Color.parseColor("#5533CC33"))
                         .strokeWidth(2f));
             }
         });
+
     }
+
 
     // === MapView Lifecycle ===
    // @Override public void onMapReady(GoogleMap map) { googleMap = map; }

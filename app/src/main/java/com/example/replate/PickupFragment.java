@@ -185,11 +185,13 @@ public class PickupFragment extends Fragment {
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", getContext().MODE_PRIVATE);
         String lastPlaceName = prefs.getString("lastPlaceName", null);
         int selectedDistanceKm = prefs.getInt("selected_distance_km", 1);
-
+Log.d("rrr", lastPlaceName);
         within.setText("Within " + selectedDistanceKm + " km");
 
         if (lastPlaceName != null) {
             chosenLocation.setText(lastPlaceName);
+            Log.d("rrr", "2: " + lastPlaceName);
+
         } else {
             FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
             if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
