@@ -23,6 +23,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ImageView;
+
+import com.bumptech.glide.Glide;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -268,6 +270,44 @@ public class ParcelActivity extends AppCompatActivity {
                             address = documentSnapshot.getString("address");
                             price = documentSnapshot.getDouble("price");
 
+
+
+                            ImageView backgroundImage = findViewById(R.id.backgroundImage);
+                            String imageUrl = documentSnapshot.getString("imageUrl");
+                            List<String> tags = (List<String>) documentSnapshot.get("tags");
+
+                            if (imageUrl != null && !imageUrl.isEmpty()) {
+                                // Załaduj zdjęcie z URL
+                                Glide.with(this)
+                                        .load(imageUrl)
+                                        .placeholder(R.drawable.photo_bakery)
+                                        .error(R.drawable.photo_bakery)
+                                        .into(backgroundImage);
+                            } else {
+                                // Jeśli brak zdjęcia, ustaw na podstawie tagu
+                                if (tags != null && tags.size() == 1) {
+                                    switch (tags.get(0).toLowerCase(Locale.ROOT)) {
+                                        case "sweets": backgroundImage.setImageResource(R.drawable.photo_sweets); break;
+                                        case "fast food": backgroundImage.setImageResource(R.drawable.photo_fastfood); break;
+                                        case "bakery": backgroundImage.setImageResource(R.drawable.photo_bakery); break;
+                                        case "dairy": backgroundImage.setImageResource(R.drawable.photo_dairy); break;
+                                        case "vegetables": backgroundImage.setImageResource(R.drawable.photo_vegetables); break;
+                                        case "vegetarian": backgroundImage.setImageResource(R.drawable.photo_vegetarian); break;
+                                        case "vegan": backgroundImage.setImageResource(R.drawable.photo_vegan); break;
+                                        case "fruits": backgroundImage.setImageResource(R.drawable.photo_fruits); break;
+                                        case "liquids": backgroundImage.setImageResource(R.drawable.photo_liquids); break;
+                                        case "meals": backgroundImage.setImageResource(R.drawable.photo_meal); break;
+                                        case "meat": backgroundImage.setImageResource(R.drawable.photo_meat); break;
+                                        default: backgroundImage.setImageResource(R.drawable.photo_mixed); break;
+                                    }
+                                } else {
+                                    backgroundImage.setImageResource(R.drawable.photo_mixed);
+                                }
+                            }
+
+
+
+
                             SharedPreferences prefs = this.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
                             String whenText = prefs.getString("when", "Today");
 
@@ -317,7 +357,6 @@ public class ParcelActivity extends AppCompatActivity {
                             // tagi
                             LinearLayout tagContainer = findViewById(R.id.tagContainer);
                             tagContainer.removeAllViews();
-                            List<String> tags = (List<String>) documentSnapshot.get("tags");
                             if (tags != null) {
                                 for (String tag : tags) {
                                     TextView tagView = new TextView(this);

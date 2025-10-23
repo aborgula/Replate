@@ -128,9 +128,6 @@ public class PackagesActivity extends AppCompatActivity {
                     parcelList.clear();
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
 
-                        Log.d("FirestoreDebug", "Document ID: " + doc.getId());
-                        Log.d("FirestoreDebug", "imageUrl: " + doc.getString("imageUrl"));
-                        Log.d("FirestoreDebug", "title: " + doc.getString("title"));
 
                         String id = doc.getId();
                         String title = doc.getString("title");
@@ -149,7 +146,6 @@ public class PackagesActivity extends AppCompatActivity {
                         parcel.setStatus(status);
                         parcel.setTags(tags);
 
-                        Log.d("FirestoreDebug", "Parcel imageUrl AFTER setting: " + parcel.getImageUrl()); // 🔑 Przenieś log tutaj
 
                         parcelList.add(parcel);
                     }
