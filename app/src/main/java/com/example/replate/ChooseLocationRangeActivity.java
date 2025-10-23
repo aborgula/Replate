@@ -29,6 +29,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
@@ -70,6 +71,8 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
     private LatLng selectedLocation;
     private LatLng tempSelectedLocation = null;
     private String tempSelectedPlaceId = null;
+    private Marker userLocationMarker;
+
 
     private static final String MAP_VIEW_BUNDLE_KEY = "MapViewBundleKey";
 
@@ -132,7 +135,14 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
                                 Place place = resp.getPlace();
                                 if (place.getLatLng() != null && googleMap != null) {
                                     tempSelectedLocation[0] = place.getLatLng();
+
+                                    if (userLocationMarker != null) userLocationMarker.remove(); // usuń tylko poprzedni marker użytkownika
                                     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(tempSelectedLocation[0], 12f));
+                                    userLocationMarker = googleMap.addMarker(new MarkerOptions()
+                                            .position(tempSelectedLocation[0])
+                                            .title(place.getName())
+                                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+
                                     if (currentCircle != null) currentCircle.remove();
                                     int radiusKm = getSharedPreferences("MyPrefs", MODE_PRIVATE).getInt("selected_distance_km", 5);
                                     currentCircle = googleMap.addCircle(new CircleOptions()
@@ -143,6 +153,7 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
                                             .strokeWidth(2f));
                                 }
                             });
+
                         }
 
                         ArrayAdapter<String> adapter = new ArrayAdapter<>(
@@ -221,8 +232,12 @@ public class ChooseLocationRangeActivity extends AppCompatActivity implements On
                 editor.putLong("lastLat", Double.doubleToLongBits(locationToSave.latitude));
                 editor.putLong("lastLng", Double.doubleToLongBits(locationToSave.longitude));
                 editor.putInt("selected_distance_km", selectedKm);
-                String placeNameToSave = searchCity.getText().toString();
-                editor.putString("lastPlaceName", placeNameToSave);
+
+                String currentSearchText = searchCity.getText().toString().trim();
+                if (!currentSearchText.isEmpty()) {
+                    editor.putString("lastPlaceName", currentSearchText);
+                }
+
                 editor.apply();
 
                 Log.d("FilterDebug", "Saved location:");
