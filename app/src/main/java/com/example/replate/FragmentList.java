@@ -12,6 +12,7 @@ import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 
 import com.airbnb.lottie.LottieAnimationView;
+import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 
 import android.util.Log;
@@ -132,14 +133,6 @@ public class FragmentList extends Fragment {
         int filterStart = prefs.getInt("startTimeMinutes", 0);
         int filterEnd = prefs.getInt("endTimeMinutes", 1439);
 
-        Log.d("FilterDebug", "------ FILTRY ------");
-        Log.d("FilterDebug", "PlaceId: " + filterPlaceId);
-        Log.d("FilterDebug", "Lat/Lng: " + filterLat + ", " + filterLng);
-        Log.d("FilterDebug", "Distance km: " + selectedDistanceKm);
-        Log.d("FilterDebug", "Selected date: " + selectedDate);
-        Log.d("FilterDebug", "Time range: " + filterStart + " - " + filterEnd + " min");
-        Log.d("FilterDebug", "Tags selected: " + currentSelectedChips);
-
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         db.collection("users").document(currentUserId).get().addOnSuccessListener(userDoc -> {
@@ -159,12 +152,7 @@ public class FragmentList extends Fragment {
                             String creatorId = document.getString("userId");
                             String docId = document.getId();
 
-                            Log.d("FilterDebug", "------------------");
-                            Log.d("FilterDebug", "📦 Sprawdzam paczkę: " + docId + " (" + document.getString("title") + ")");
-                            Log.d("FilterDebug", "CreatorId: " + creatorId);
-
                             if (creatorId != null && creatorId.equals(currentUserId)) {
-                                Log.d("FilterDebug", "⏭ Pomijam własną paczkę");
                                 continue; // Pomijamy własne paczki
                             }
 
@@ -178,7 +166,6 @@ public class FragmentList extends Fragment {
                                     break;
                                 }
                             }
-                            Log.d("FilterDebug", "→ Po tagach: " + showParcel + " (tags=" + tags + ")");
 
                             // Filtrowanie po dacie
                             if (showParcel && selectedDate != null) {
@@ -203,12 +190,9 @@ public class FragmentList extends Fragment {
 
                                     if (parcelEndMin < filterStart || parcelStartMin > filterEnd) {
                                         showParcel = false;
-                                        Log.d("FilterDebug", "❌ Odrzucono po czasie: " + parcelStartStr + "-" + parcelEndStr);
-
                                     }
                                 }
                             }
-
 
                             //Filtrowanie po odległości
                             if (showParcel && selectedDistanceKm > 0) {
@@ -218,19 +202,15 @@ public class FragmentList extends Fragment {
                                     float[] results = new float[1];
                                     android.location.Location.distanceBetween(filterLat, filterLng, parcelLat, parcelLng, results);
                                     float distanceKm = results[0] / 1000f;
-                                    Log.d("FilterDebug", "📏 Dystans do paczki: " + distanceKm + " km");
 
                                     if (distanceKm > selectedDistanceKm) {
                                         showParcel = false;
-                                        Log.d("FilterDebug", "❌ Odrzucono po dystansie: " + distanceKm + " km > " + selectedDistanceKm + " km");
                                     }
                                 }else{
-                                    Log.w("FilterDebug", "⚠ Brak współrzędnych paczki!");
                                 }
                             }
 
                             if (showParcel) {
-                                Log.d("FilterDebug", "✅ Paczka zaakceptowana!");
                                 hasParcels = true;
                                 View parcelView = layoutInflater.inflate(R.layout.layout_package_list, parcelContainer, false);
 
@@ -255,7 +235,35 @@ public class FragmentList extends Fragment {
                                     price.setText("Free");
                                 }
 
-                                // ✅ Pobieramy rating użytkownika (creatorId), a nie parceli
+                                String imageUrl = document.getString("imageUrl");
+                                if (imageUrl != null && !imageUrl.isEmpty()) {
+                                    Glide.with(requireContext())
+                                            .load(imageUrl)
+                                            .placeholder(R.drawable.photo_bakery)
+                                            .error(R.drawable.photo_bakery)
+                                            .into(image);
+                                } else {
+                                    // Jeśli brak zdjęcia, ustaw na podstawie tagu
+                                    if (tags != null && tags.size() == 1) {
+                                        switch (tags.get(0).toLowerCase(Locale.ROOT)) {
+                                            case "sweets": image.setImageResource(R.drawable.photo_sweets); break;
+                                            case "fast food": image.setImageResource(R.drawable.photo_fastfood); break;
+                                            case "bakery": image.setImageResource(R.drawable.photo_bakery); break;
+                                            case "dairy": image.setImageResource(R.drawable.photo_dairy); break;
+                                            case "vegetables": image.setImageResource(R.drawable.photo_vegetables); break;
+                                            case "vegetarian": image.setImageResource(R.drawable.photo_vegetarian); break;
+                                            case "vegan": image.setImageResource(R.drawable.photo_vegan); break;
+                                            case "fruits": image.setImageResource(R.drawable.photo_fruits); break;
+                                            case "liquids": image.setImageResource(R.drawable.photo_liquids); break;
+                                            case "meals": image.setImageResource(R.drawable.photo_meal); break;
+                                            case "meat": image.setImageResource(R.drawable.photo_meat); break;
+                                            default: image.setImageResource(R.drawable.photo_mixed); break;
+                                        }
+                                    } else {
+                                        image.setImageResource(R.drawable.photo_mixed);
+                                    }
+                                }
+
                                 if (creatorId != null) {
                                     db.collection("users").document(creatorId)
                                             .get()

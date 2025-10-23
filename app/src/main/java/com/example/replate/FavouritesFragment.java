@@ -41,8 +41,6 @@ public class FavouritesFragment extends Fragment {
     private LottieAnimationView emptyAnim;
     private LinearLayout layoutAnimation;
 
-
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -71,6 +69,8 @@ public class FavouritesFragment extends Fragment {
 
     private void loadLikedUsers() {
 
+        favouriteUsers.clear();
+
         String currentUserId = auth.getCurrentUser().getUid();
         db.collection("users").document(currentUserId).get().addOnSuccessListener(documentSnapshot -> {
             List<String> likedUserIds = (List<String>) documentSnapshot.get("likedUsers");
@@ -81,14 +81,11 @@ public class FavouritesFragment extends Fragment {
                 recyclerView.setVisibility(View.GONE);
                 layoutAnimation.setVisibility(View.VISIBLE);
                 emptyAnim.playAnimation();
-                Log.d("tt", "w pierwszym if");
                 return;
             } else {
                 recyclerView.setVisibility(View.VISIBLE);
                 layoutAnimation.setVisibility(View.GONE);
                 emptyAnim.cancelAnimation();
-                Log.d("tt", "w drugim if");
-
             }
 
 
@@ -101,10 +98,14 @@ public class FavouritesFragment extends Fragment {
                         if (rating == null) {
                             rating = 0.0;
                         }
+
+                        String profileImageBase64 = userDoc.getString("profileImageBase64");
+
                         User user = new User(
                                 uid,
                                 userDoc.getString("login"),
                                 userDoc.getString("photoUrl"),
+                                profileImageBase64,
                                 rating
                         );
                         favouriteUsers.add(user);
