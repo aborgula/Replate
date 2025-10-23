@@ -47,6 +47,9 @@ import com.example.replate.databinding.ActivityHomeBinding;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken;
@@ -66,6 +69,7 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -75,6 +79,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -105,6 +110,7 @@ public class HomeActivity extends AppCompatActivity {
     private String selectedDay = "today";
     private Double selectedLat = null;
     private Double selectedLng = null;
+    private File cameraImageFile;
     List<String> selectedTags = new ArrayList<>();
 
     @Override
@@ -144,12 +150,18 @@ public class HomeActivity extends AppCompatActivity {
             showAddParcelStep1Dialog();
         });
 
+
         galleryLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                        selectedParcelImageUri = result.getData().getData();
-                        parcelImageView.setImageURI(selectedParcelImageUri);
+                        Uri uri = result.getData().getData();
+                        if (uri != null) {
+                            Log.d("Photo", "Gallery URI: " + uri);
+                            selectedParcelImageUri = uri;
+                            // pokaż podgląd
+                            parcelImageView.setImageURI(selectedParcelImageUri);
+                        }
                     }
                 });
 
@@ -157,8 +169,22 @@ public class HomeActivity extends AppCompatActivity {
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == RESULT_OK) {
-                        selectedParcelImageUri = cameraImageUri;
-                        parcelImageView.setImageURI(selectedParcelImageUri);
+                        // Kamera zapisuje do cameraImageFile (FileProvider URI)
+                        if (cameraImageFile != null && cameraImageFile.exists()) {
+                            selectedParcelImageUri = FileProvider.getUriForFile(
+                                    this,
+                                    getPackageName() + ".fileprovider",
+                                    cameraImageFile);
+                            Log.d("Photo", "Camera URI: " + selectedParcelImageUri);
+                            parcelImageView.setImageURI(selectedParcelImageUri);
+
+                            // upewnij się, że system udzielił uprawnień:
+                            this.grantUriPermission(getPackageName(), selectedParcelImageUri,
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        } else {
+                            Log.e("Photo", "Camera file missing or doesn't exist");
+                            Toast.makeText(this, "Photo not saved by camera", Toast.LENGTH_SHORT).show();
+                        }
                     }
                 });
 
@@ -179,7 +205,6 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void replaceFragment(Fragment fragment) {
-        Log.d("qqq", " w replacefragment");
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.frame_layout, fragment);
@@ -978,11 +1003,11 @@ public class HomeActivity extends AppCompatActivity {
 
         back = dialogView.findViewById(R.id.back);
         addparcel = dialogView.findViewById(R.id.addparcel);
+        parcelImageView = dialogView.findViewById(R.id.parcelImage);
 
         builder.setTitle("Add photo (optional)");
         AlertDialog dialog = builder.create();
 
-        parcelImageView = dialogView.findViewById(R.id.parcelImage);
         if (selectedParcelImageUri != null) {
             parcelImageView.setImageURI(selectedParcelImageUri);
         }
@@ -1053,8 +1078,11 @@ public class HomeActivity extends AppCompatActivity {
             dialog.dismiss();
             showAddParcelStep4Dialog();
         });
-
+/**
         addparcel.setOnClickListener(v -> {
+            ProgressDialog progressDialog = new ProgressDialog(this);
+            progressDialog.setMessage("Uploading...");
+            progressDialog.show();
             int fallbackDrawableResId = R.drawable.photo_mixed;
 
             if (selectedTags.size() > 1) {
@@ -1088,18 +1116,8 @@ public class HomeActivity extends AppCompatActivity {
             StorageReference imageRef = FirebaseStorage.getInstance().getReference().child(imageFileName);
 
 
-            if (user == null) {
-                Log.e("AUTH", "User is not logged in!");
-                return;
-            }
-
-
-            ProgressDialog progressDialog = new ProgressDialog(this);
-            progressDialog.setMessage("Uploading...");
-            progressDialog.show();
-
 // 🔁 konwersja Drawable do byte[]
-/*
+
 Drawable drawable = ContextCompat.getDrawable(this, fallbackDrawableResId);
 Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
 ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -1160,7 +1178,7 @@ imageRef.putBytes(imageBytes)
             progressDialog.dismiss();
             Toast.makeText(this, "Image upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         });
-*/
+
 
 // 🟢 Zamiast uploadu zdjęcia — od razu zapisz dane bez pola imageUrl:
             FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -1181,7 +1199,7 @@ imageRef.putBytes(imageBytes)
             parcelData.put("endTime", endTime);
             parcelData.put("address", selectedFullAddress);
             parcelData.put("placeId", selectedPlaceId);
-// parcelData.put("imageUrl", downloadUri.toString()); // brak zdjęcia
+            parcelData.put("imageUrl", downloadUri.toString()); // brak zdjęcia
             parcelData.put("userId", userId);
             parcelData.put("phone", phoneNumber);
             parcelData.put("price", price);
@@ -1193,7 +1211,7 @@ imageRef.putBytes(imageBytes)
             parcelData.put("lng", selectedLng);
 
 
-            /**db.collection("parcels")
+            db.collection("parcels")
                     .add(parcelData)
                     .addOnSuccessListener(documentReference -> {
                         progressDialog.dismiss();
@@ -1218,55 +1236,141 @@ imageRef.putBytes(imageBytes)
                         phoneNumber = "";
                         price = 0.0;
                         selectedDay = "today";
+                        selectedLat = 0.0;
+                        selectedLng = 0.0;
                         dialog.dismiss();
-
-
 
                     })
                     .addOnFailureListener(e -> {
                         progressDialog.dismiss();
                         Toast.makeText(this, "Failed to save parcel: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });**/
+                    });
 
-            new Handler().postDelayed(() -> {
+        });**/
+
+        addparcel.setOnClickListener(v -> {
+            ProgressDialog progressDialog = new ProgressDialog(this);
+            progressDialog.setMessage("Uploading...");
+            progressDialog.show();
+
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user == null) {
+                Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show();
+                progressDialog.dismiss();
+                return;
+            }
+            String userId = user.getUid();
+
+            // Wybrane zdjęcie użytkownika lub fallback drawable
+            Uri imageUri = selectedParcelImageUri;
+            int fallbackDrawableResId = R.drawable.photo_mixed;
+
+            if (selectedTags.size() == 1) {
+                String tag = selectedTags.get(0).toLowerCase(Locale.ROOT);
+                switch (tag) {
+                    case "sweets": fallbackDrawableResId = R.drawable.photo_sweets; break;
+                    case "fast food": fallbackDrawableResId = R.drawable.photo_fastfood; break;
+                    case "bakery": fallbackDrawableResId = R.drawable.photo_bakery; break;
+                    case "dairy": fallbackDrawableResId = R.drawable.photo_dairy; break;
+                    case "vegetables": fallbackDrawableResId = R.drawable.photo_vegetables; break;
+                    case "vegetarian": fallbackDrawableResId = R.drawable.photo_vegetarian; break;
+                    case "vegan": fallbackDrawableResId = R.drawable.photo_vegan; break;
+                    case "fruits": fallbackDrawableResId = R.drawable.photo_fruits; break;
+                    case "liquids": fallbackDrawableResId = R.drawable.photo_liquids; break;
+                    case "meals": fallbackDrawableResId = R.drawable.photo_meal; break;
+                    case "meat": fallbackDrawableResId = R.drawable.photo_meat; break;
+                }
+            }
+
+            StorageReference imageRef = FirebaseStorage.getInstance()
+                    .getReference("parcels/" + UUID.randomUUID() + ".jpg");
+
+            // Funkcja uploadu: albo z URI, albo z drawable
+            Task<Uri> uploadTask;
+            if (imageUri != null) {
+                uploadTask = imageRef.putFile(imageUri)
+                        .continueWithTask(task -> {
+                            if (!task.isSuccessful()) throw task.getException();
+                            return imageRef.getDownloadUrl();
+                        });
+            } else {
+                // fallback drawable
+                Drawable drawable = ContextCompat.getDrawable(this, fallbackDrawableResId);
+                Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                byte[] imageBytes = baos.toByteArray();
+
+                uploadTask = imageRef.putBytes(imageBytes)
+                        .continueWithTask(task -> {
+                            if (!task.isSuccessful()) throw task.getException();
+                            return imageRef.getDownloadUrl();
+                        });
+            }
+
+            uploadTask.addOnSuccessListener(downloadUri -> {
+                // Zapis do Firestore
+                FirebaseFirestore db = FirebaseFirestore.getInstance();
+                Map<String, Object> parcelData = new HashMap<>();
+
+                // ustawienie daty
+                Calendar calendar = Calendar.getInstance();
+                if ("tomorrow".equalsIgnoreCase(selectedDay)) calendar.add(Calendar.DAY_OF_YEAR, 1);
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                String dateToSave = sdf.format(calendar.getTime());
+
+                parcelData.put("date", dateToSave);
+                parcelData.put("title", capitalizeFirstLetter(title.trim()));
+                parcelData.put("description", capitalizeFirstLetter(description.trim()));
+                parcelData.put("tags", selectedTags);
+                parcelData.put("startTime", startTime);
+                parcelData.put("endTime", endTime);
+                parcelData.put("address", selectedFullAddress);
+                parcelData.put("placeId", selectedPlaceId);
+                parcelData.put("imageUrl", downloadUri.toString()); // ✅ tutaj URL zdjęcia
+                parcelData.put("userId", userId);
+                parcelData.put("phone", phoneNumber);
+                parcelData.put("price", price);
+                parcelData.put("timestamp", FieldValue.serverTimestamp());
+                parcelData.put("status", "active");
+                parcelData.put("ownerconfirmed", "no");
+                parcelData.put("finished", false);
+                parcelData.put("lat", selectedLat);
+                parcelData.put("lng", selectedLng);
+
                 db.collection("parcels")
                         .add(parcelData)
                         .addOnSuccessListener(documentReference -> {
                             progressDialog.dismiss();
                             Toast.makeText(this, "Parcel added!", Toast.LENGTH_SHORT).show();
-                            String parcelId = documentReference.getId();
 
+                            // dodanie ID paczki do użytkownika
                             db.collection("users").document(userId)
-                                    .update("parcelIds", FieldValue.arrayUnion(parcelId))
-                                    .addOnSuccessListener(aVoid -> Log.d("Firestore", "Parcel ID added to user"))
-                                    .addOnFailureListener(e -> Log.e("Firestore", "Failed to update user: " + e.getMessage()));
+                                    .update("parcelIds", FieldValue.arrayUnion(documentReference.getId()));
 
-                            // Resetuj dane
-                            title = "";
-                            description = "";
+                            // reset pól
+                            title = description = selectedFullAddress = selectedPlaceId = phoneNumber = "";
+                            startTime = endTime = "";
                             selectedTags.clear();
-                            startTime = "";
-                            endTime = "";
-                            selectedFullAddress = "";
-                            selectedPlaceId = "";
                             addressToPlaceIdMap.clear();
                             selectedParcelImageUri = null;
-                            phoneNumber = "";
-                            price = 0.0;
                             selectedDay = "today";
-                            dialog.dismiss();
-                            selectedLat = 0.0;
-                            selectedLng = 0.0;
+                            price = 0.0;
+                            selectedLat = selectedLng = 0.0;
 
+                            dialog.dismiss();
                         })
                         .addOnFailureListener(e -> {
                             progressDialog.dismiss();
                             Toast.makeText(this, "Failed to save parcel: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         });
-            },  1000);//60 * 1000); // minuta
 
-
+            }).addOnFailureListener(e -> {
+                progressDialog.dismiss();
+                Toast.makeText(this, "Image upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            });
         });
+
 
         dialog.show();
         dialog.setOnCancelListener(dialogInterface -> {
@@ -1284,6 +1388,8 @@ imageRef.putBytes(imageBytes)
             selectedDay = "today";
         });
     }
+
+
 
     private void showTimePicker(OnTimeSetListener listener) {
         Calendar calendar = Calendar.getInstance();
@@ -1398,7 +1504,5 @@ imageRef.putBytes(imageBytes)
                 .commit();
 
         binding.bottomNavigationView.setSelectedItemId(R.id.profile);
-
     }
-
 }

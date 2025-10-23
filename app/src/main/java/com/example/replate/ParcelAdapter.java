@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,10 +16,12 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.ncorti.slidetoact.SlideToActView;
 
 import java.util.List;
+import java.util.Locale;
 
 public class ParcelAdapter extends RecyclerView.Adapter<ParcelAdapter.ParcelViewHolder> {
 
@@ -69,7 +72,7 @@ public class ParcelAdapter extends RecyclerView.Adapter<ParcelAdapter.ParcelView
         holder.title.setText(parcel.getTitle());
 
         // Dekodowanie zdjęcia
-        if (parcel.getImageBase64() != null && !parcel.getImageBase64().isEmpty()) {
+   /**     if (parcel.getImageBase64() != null && !parcel.getImageBase64().isEmpty()) {
             try {
                 String base64 = parcel.getImageBase64();
                 if (base64.contains(",")) base64 = base64.substring(base64.indexOf(",") + 1);
@@ -81,7 +84,35 @@ public class ParcelAdapter extends RecyclerView.Adapter<ParcelAdapter.ParcelView
             }
         } else {
             holder.image.setImageResource(R.drawable.photo_mixed);
+        }**/
+   Log.d("www","getimageurl " + parcel.getImageUrl());
+        if (parcel.getImageUrl() != null && !parcel.getImageUrl().isEmpty()) {
+            Glide.with(context)
+                    .load(parcel.getImageUrl())
+                    .placeholder(R.drawable.photo_mixed) // jeśli brak lub jeszcze ładuje
+                    .into(holder.image);
+        } else {
+            // jeśli brak zdjęcia, wybierz domyślne zdjęcie na podstawie tagu
+            if (parcel.getTags() != null && parcel.getTags().size() == 1) {
+                switch (parcel.getTags().get(0).toLowerCase(Locale.ROOT)) {
+                    case "sweets": holder.image.setImageResource(R.drawable.photo_sweets); break;
+                    case "fast food": holder.image.setImageResource(R.drawable.photo_fastfood); break;
+                    case "bakery": holder.image.setImageResource(R.drawable.photo_bakery); break;
+                    case "dairy": holder.image.setImageResource(R.drawable.photo_dairy); break;
+                    case "vegetables": holder.image.setImageResource(R.drawable.photo_vegetables); break;
+                    case "vegetarian": holder.image.setImageResource(R.drawable.photo_vegetarian); break;
+                    case "vegan": holder.image.setImageResource(R.drawable.photo_vegan); break;
+                    case "fruits": holder.image.setImageResource(R.drawable.photo_fruits); break;
+                    case "liquids": holder.image.setImageResource(R.drawable.photo_liquids); break;
+                    case "meals": holder.image.setImageResource(R.drawable.photo_meal); break;
+                    case "meat": holder.image.setImageResource(R.drawable.photo_meat); break;
+                    default: holder.image.setImageResource(R.drawable.photo_mixed); break;
+                }
+            } else {
+                holder.image.setImageResource(R.drawable.photo_mixed);
+            }
         }
+
 
         // Logika slidów
         if (isOwnerProfile) {

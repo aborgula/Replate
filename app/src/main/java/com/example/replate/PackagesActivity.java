@@ -115,7 +115,6 @@ public class PackagesActivity extends AppCompatActivity {
         arrowBack.setOnClickListener(v -> finish());
         recyclerView.setAdapter(adapter);
 
-        // Załaduj paczki użytkownika
         loadParcelsForUser(userId);
     }
 
@@ -128,23 +127,34 @@ public class PackagesActivity extends AppCompatActivity {
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     parcelList.clear();
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+
+                        Log.d("FirestoreDebug", "Document ID: " + doc.getId());
+                        Log.d("FirestoreDebug", "imageUrl: " + doc.getString("imageUrl"));
+                        Log.d("FirestoreDebug", "title: " + doc.getString("title"));
+
                         String id = doc.getId();
                         String title = doc.getString("title");
-                        String image = doc.getString("imageBase64");
+                        String imageUrl = doc.getString("imageUrl"); // 🔑 Zmień na imageUrl!
                         String parcelUserId = doc.getString("userId");
                         String ownerConfirmed = doc.getString("ownerconfirmed");
                         String status = doc.getString("status");
+                        List<String> tags = (List<String>) doc.get("tags"); // 🔑 Dodaj tags
 
                         Parcel parcel = new Parcel();
                         parcel.setId(id);
                         parcel.setTitle(title);
-                        parcel.setImageBase64(image);
+                        parcel.setImageUrl(imageUrl); // 🔑 Teraz ustawiasz prawidłowy URL
                         parcel.setUserId(parcelUserId);
                         parcel.setOwnerConfirmed(ownerConfirmed);
                         parcel.setStatus(status);
+                        parcel.setTags(tags);
+
+                        Log.d("FirestoreDebug", "Parcel imageUrl AFTER setting: " + parcel.getImageUrl()); // 🔑 Przenieś log tutaj
 
                         parcelList.add(parcel);
                     }
+
+                    // 🔑 Odśwież adapter TUTAJ
                     adapter.notifyDataSetChanged();
                 })
                 .addOnFailureListener(e -> {
