@@ -166,7 +166,7 @@
             android:hint="Marta223"
             android:paddingVertical="10dp"
             android:paddingStart="18dp"
-            android:inputType="phone" />
+            android:inputType="text" />
     </LinearLayout>
 
     <LinearLayout

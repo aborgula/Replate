@@ -175,14 +175,48 @@ public class RegisterActivity extends AppCompatActivity {
                                                         FirebaseAuth.getInstance().signInWithCredential(credential)
                                                                 .addOnCompleteListener(task -> {
                                                                     if (task.isSuccessful()) {
-                                                                        Toast.makeText(RegisterActivity.this, "Verification successful", Toast.LENGTH_SHORT).show();
-                                                                        // przejście dalej do HomeActivity
-                                                                        Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
-                                                                        startActivity(intent);
-                                                                        finish();  // opcjonalnie zamknij aktualną aktywność
-                                                                    } else {
-                                                                        Toast.makeText(RegisterActivity.this, "Verification failed", Toast.LENGTH_SHORT).show();
+                                                                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                                                                        if (user != null) {
+                                                                            String userId = user.getUid();
+                                                                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                                                                            db.collection("users").document(userId).get()
+                                                                                    .addOnSuccessListener(document -> {
+                                                                                        if (!document.exists()) {
+                                                                                            Map<String, Object> userData = new HashMap<>();
+                                                                                            userData.put("phone", phoneNumber);
+                                                                                            userData.put("parcelIds", new ArrayList<String>());
+                                                                                            userData.put("likedUsers", new ArrayList<String>());
+                                                                                            userData.put("likedBy", new ArrayList<String>());
+                                                                                            userData.put("orders", new ArrayList<String>());
+                                                                                            userData.put("notificationsEnabled", true);
+
+                                                                                            // pobierz token FCM
+                                                                                            FirebaseMessaging.getInstance().getToken()
+                                                                                                    .addOnCompleteListener(tokenTask -> {
+                                                                                                        if (tokenTask.isSuccessful()) {
+                                                                                                            String fcmToken = tokenTask.getResult();
+                                                                                                            userData.put("fcmToken", fcmToken);
+
+                                                                                                            db.collection("users").document(userId)
+                                                                                                                    .set(userData)
+                                                                                                                    .addOnSuccessListener(aVoid -> {
+                                                                                                                        Toast.makeText(RegisterActivity.this, "Phone user saved in DB", Toast.LENGTH_SHORT).show();
+                                                                                                                        // przejście do HomeActivity
+                                                                                                                        startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
+                                                                                                                        finish();
+                                                                                                                    });
+                                                                                                        }
+                                                                                                    });
+                                                                                        } else {
+                                                                                            // dokument istnieje → po prostu idź do HomeActivity
+                                                                                            startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
+                                                                                            finish();
+                                                                                        }
+                                                                                    });
+                                                                        }
                                                                     }
+
                                                                 });
                                                     } else {
                                                         Toast.makeText(RegisterActivity.this, "Please enter the code", Toast.LENGTH_SHORT).show();
@@ -192,7 +226,6 @@ public class RegisterActivity extends AppCompatActivity {
 
                                                 AlertDialog codeDialog = codeBuilder.create();
 
-// Zmiana koloru przycisków po pokazaniu dialogu
                                                 codeDialog.setOnShowListener(dialog -> {
                                                     Button positiveButton = codeDialog.getButton(AlertDialog.BUTTON_POSITIVE);
                                                     Button negativeButton = codeDialog.getButton(AlertDialog.BUTTON_NEGATIVE);
@@ -389,7 +422,4 @@ private void firebaseAuthWithGoogle(String idToken) {
                 }
             });
 }
-
-
-
 }
