@@ -185,7 +185,6 @@ public class PickupFragment extends Fragment {
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", getContext().MODE_PRIVATE);
         String lastPlaceName = prefs.getString("lastPlaceName", null);
         int selectedDistanceKm = prefs.getInt("selected_distance_km", 1);
-Log.d("rrr", lastPlaceName);
         within.setText("Within " + selectedDistanceKm + " km");
 
         if (lastPlaceName != null) {

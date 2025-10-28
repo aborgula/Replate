@@ -65,22 +65,26 @@ public class OrdersFragment extends Fragment {
 
         if (currentUserId == null) {
             Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+            Log.w("LoadParcels", "User not logged in");
             return;
         }
+        Log.d("LoadParcels", "Current user ID: " + currentUserId);
 
         db.collection("users").document(currentUserId)
                 .get()
                 .addOnSuccessListener(userDoc -> {
                     if (!userDoc.exists()) {
                         Toast.makeText(getContext(), "User data not found", Toast.LENGTH_SHORT).show();
+                        Log.w("LoadParcels", "User document does not exist");
                         showEmptyState();
                         return;
                     }
 
-                    // Pobierz listę zamówień (parcelId) z pola orders
                     List<String> parcelIds = (List<String>) userDoc.get("orders");
+                    Log.d("LoadParcels", "User orders: " + parcelIds);
 
                     if (parcelIds == null || parcelIds.isEmpty()) {
+                        Log.d("LoadParcels", "No parcels found for user");
                         showEmptyState();
                         return;
                     }
@@ -89,7 +93,6 @@ public class OrdersFragment extends Fragment {
                     ordersScrollView.setVisibility(View.VISIBLE);
                     emptyOrdersLayout.setVisibility(View.GONE);
 
-                    // Firestore ogranicza whereIn do 10 elementów
                     List<List<String>> batches = new ArrayList<>();
                     int batchSize = 10;
                     for (int i = 0; i < parcelIds.size(); i += batchSize) {
@@ -98,15 +101,20 @@ public class OrdersFragment extends Fragment {
                     }
 
                     for (List<String> batch : batches) {
+
                         db.collection("parcels")
                                 .whereIn(FieldPath.documentId(), batch)
                                 .whereEqualTo("finished", false)
                                 .get()
                                 .addOnSuccessListener(parcelSnapshots -> {
+                                    Log.d("LoadParcels", "Parcels fetched: " + parcelSnapshots.size());
                                     if (parcelSnapshots.isEmpty() && ordersContainer.getChildCount() == 0) {
                                         showEmptyState();
                                     } else {
                                         for (QueryDocumentSnapshot parcelDoc : parcelSnapshots) {
+                                            Log.d("LoadParcels", "Parcel ID: " + parcelDoc.getId());
+                                            ordersScrollView.setVisibility(View.VISIBLE);
+                                            emptyOrdersLayout.setVisibility(View.GONE);
                                             View itemView = LayoutInflater.from(getContext()).inflate(R.layout.layout_order, ordersContainer, false);
 
                                             TextView titleView = itemView.findViewById(R.id.itemTitle);
@@ -192,13 +200,18 @@ public class OrdersFragment extends Fragment {
                                         }
                                     }
                                 })
-                                .addOnFailureListener(e ->
-                                        Toast.makeText(getContext(), "Failed to load parcels: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                                .addOnFailureListener(e ->{
+                                            Log.e("LoadParcels", "Failed to load parcels", e);
+                                    Toast.makeText(getContext(), "Failed to load parcels: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+
+                                        });
                     }
 
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(getContext(), "Failed to load user data: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    Log.e("LoadParcels", "Failed to load user data", e);
+                    Toast.makeText(getContext(), "Failed to load user data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     // Pokazuje pusty ekran
