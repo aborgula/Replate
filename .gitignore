@@ -25,3 +25,8 @@ gradle-wrapper.jar
 
 # IntelliJ IDE files
 .idea/
+
+# Gradle distribution files
+gradle-*.zip
+gradle-*/
+*.zip
