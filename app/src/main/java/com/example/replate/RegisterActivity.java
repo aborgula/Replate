@@ -330,19 +330,66 @@ public class RegisterActivity extends AppCompatActivity {
         }
     }
 
-    private void firebaseAuthWithGoogle(String idToken) {
-        AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
-        mAuth.signInWithCredential(credential)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        // Sukces – użytkownik zalogowany
-                        FirebaseUser user = mAuth.getCurrentUser();
-                        startActivity(new Intent(this, MainActivity.class));
-                        finish();
-                    } else {
-                        // Błąd
-                        Toast.makeText(this, "Authentication failed.", Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
+private void firebaseAuthWithGoogle(String idToken) {
+    AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
+    mAuth.signInWithCredential(credential)
+            .addOnCompleteListener(this, task -> {
+                if (task.isSuccessful()) {
+                    // Sukces – użytkownik zalogowany
+                    FirebaseUser user = mAuth.getCurrentUser();
+                    String userId = user.getUid();
+                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                    // Sprawdź, czy dokument użytkownika istnieje
+                    db.collection("users").document(userId).get()
+                            .addOnSuccessListener(document -> {
+                                if (!document.exists()) {
+                                    // Dokument nie istnieje → stwórz nowego użytkownika
+                                    Map<String, Object> userData = new HashMap<>();
+                                    userData.put("login", user.getDisplayName());
+                                    userData.put("email", user.getEmail());
+                                    userData.put("parcelIds", new ArrayList<String>());
+                                    userData.put("likedUsers", new ArrayList<String>());
+                                    userData.put("rating", null);
+                                    userData.put("phone", null);
+                                    userData.put("address", null);
+                                    userData.put("likedBy", new ArrayList<String>());
+                                    userData.put("orders", new ArrayList<String>());
+                                    userData.put("notificationsEnabled", true);
+
+                                    // Pobierz token FCM
+                                    FirebaseMessaging.getInstance().getToken()
+                                            .addOnCompleteListener(tokenTask -> {
+                                                if (tokenTask.isSuccessful()) {
+                                                    String token = tokenTask.getResult();
+                                                    userData.put("fcmToken", token);
+
+                                                    db.collection("users").document(userId)
+                                                            .set(userData)
+                                                            .addOnSuccessListener(aVoid -> {
+                                                                // Teraz możemy wejść do HomeActivity
+                                                                startActivity(new Intent(this, HomeActivity.class));
+                                                                finish();
+                                                            })
+                                                            .addOnFailureListener(e -> {
+                                                                Toast.makeText(this, "Błąd zapisu danych: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                            });
+                                                }
+                                            });
+                                } else {
+                                    // Dokument istnieje → po prostu startujemy HomeActivity
+                                    startActivity(new Intent(this, HomeActivity.class));
+                                    finish();
+                                }
+                            });
+
+                } else {
+                    // Błąd logowania
+                    Toast.makeText(this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                }
+            });
+}
+
+
+
 }
