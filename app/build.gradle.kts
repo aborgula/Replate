@@ -41,6 +41,7 @@ dependencies {
     implementation("com.airbnb.android:lottie:6.6.6")
     implementation("com.google.android.flexbox:flexbox:3.0.0")
     implementation("com.ncorti:slidetoact:0.11.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.google.firebase:firebase-storage:20.3.0")
     implementation("com.google.firebase:firebase-auth:22.3.0")
     implementation("com.google.firebase:firebase-firestore:25.1.0")

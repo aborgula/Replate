@@ -69,9 +69,13 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.cardview.widget.CardView;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -88,6 +92,7 @@ import com.google.android.gms.auth.api.identity.Identity;
 import com.google.android.gms.auth.api.identity.SignInClient;
 import com.google.android.gms.auth.api.identity.SignInCredential;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.Response;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseException;
@@ -100,10 +105,31 @@ import com.google.firebase.auth.PhoneAuthOptions;
 import com.google.firebase.auth.PhoneAuthProvider;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.squareup.okhttp.Call;
+import com.squareup.okhttp.Callback;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import okhttp3.MediaType;
+
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import java.io.IOException;
+import android.util.Log;
+
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -121,6 +147,20 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        // Poproś o uprawnienia do powiadomień (Android 13+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS}, 100);
+            }
+        }
+
+
+
+
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
 
         getWindow().getDecorView().setSystemUiVisibility(
@@ -205,7 +245,14 @@ public class LoginActivity extends AppCompatActivity {
                                                 Toast.makeText(this, "Welcome, " + login + "!", Toast.LENGTH_LONG).show();
                                             }
 
-                                            // 🔐 Pobierz FCM token i zaktualizuj w Firestore
+
+
+
+
+
+
+
+                                            // 🔐 Pobierz FCM token i zapisz do Firestore
                                             FirebaseMessaging.getInstance().getToken()
                                                     .addOnCompleteListener(tokenTask -> {
                                                         if (tokenTask.isSuccessful()) {
@@ -213,14 +260,20 @@ public class LoginActivity extends AppCompatActivity {
                                                             Map<String, Object> updates = new HashMap<>();
                                                             updates.put("fcmToken", token);
 
-                                                            // Jeśli pole notificationsEnabled nie istnieje, ustaw na true
                                                             if (!documentSnapshot.contains("notificationsEnabled")) {
                                                                 updates.put("notificationsEnabled", true);
                                                             }
 
+                                                           // testNotification(token);
+
+
+
+
+
                                                             db.collection("users").document(userId)
                                                                     .update(updates)
                                                                     .addOnSuccessListener(aVoid -> {
+
                                                                         // Przejdź dalej po sukcesie
                                                                         goToMain();
                                                                     })
@@ -449,5 +502,58 @@ public class LoginActivity extends AppCompatActivity {
             finish();
         }
     }
+
+
+
+// Dodaj gdzieś w swojej klasie (np. MainActivity lub LoginActivity)
+
+    private void testNotification(String fcmToken) {
+        // Uruchom w osobnym wątku (wymagane dla połączeń sieciowych)
+        new Thread(() -> {
+            try {
+                // URL twojej Firebase Cloud Function
+                URL url = new URL("https://us-central1-replate-a116a.cloudfunctions.net/sendLoginNotification");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+                conn.setDoOutput(true);
+                conn.setDoInput(true);
+
+                // Przygotuj JSON
+                JSONObject jsonParam = new JSONObject();
+                jsonParam.put("fcmToken", fcmToken);
+                jsonParam.put("message", "Test notification from Android!");
+
+                // Wyślij request
+                OutputStream os = conn.getOutputStream();
+                os.write(jsonParam.toString().getBytes("UTF-8"));
+                os.close();
+
+                // Odbierz odpowiedź
+                int responseCode = conn.getResponseCode();
+
+                // Log na głównym wątku
+                runOnUiThread(() -> {
+                    if (responseCode == HttpURLConnection.HTTP_OK) {
+                        Log.d("FCM", "✅ Notification sent successfully! Response: " + responseCode);
+                        Toast.makeText(this, "Powiadomienie wysłane!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Log.e("FCM", "❌ Failed to send notification. Response code: " + responseCode);
+                        Toast.makeText(this, "Błąd: " + responseCode, Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+                conn.disconnect();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> {
+                    Log.e("FCM", "❌ Exception: " + e.getMessage());
+                    Toast.makeText(this, "Błąd: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        }).start();
+    }
+
 }
 
