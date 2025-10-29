@@ -104,15 +104,25 @@ exports.notifyFavoritesOnNewParcel = onDocumentCreated(
           const userData = userDoc.data();
           const fcmToken = userData.fcmToken;
           const notificationsEnabled = userData.notificationsEnabled !== false;
+          const parcelTitle = parcelData.title || "bez tytułu";
 
           if (fcmToken && notificationsEnabled) {
             logger.info("Preparing notification for:", userDoc.id);
+
             notifications.push({
               token: fcmToken,
               notification: {
-                title: "New parcel!",
-                body: ownerName + " added new parcel: " +
-                      (parcelData.title || "no title"),
+                title: `🎉 New parcel from ${ownerName}!`,
+                body: `${parcelTitle} is waiting for you!`,
+                // icon: "https://link_do_ikony_replate.png", // opcjonalnie własna ikona online
+              },
+              android: { // specyficzne ustawienia dla Androida
+                notification: {
+                  channelId: "new_parcel_channel",
+                  sound: "default", // systemowy dźwięk
+                  color: "#FF5722", // fajny kolor dla ikony w tray
+                  icon: "ic_launcher", // lokalna ikona w drawable
+                },
               },
               data: {
                 type: "new_parcel",
