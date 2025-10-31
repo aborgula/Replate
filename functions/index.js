@@ -1,6 +1,7 @@
 const {setGlobalOptions} = require("firebase-functions/v2");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
 const {onDocumentCreated} = require("firebase-functions/v2/firestore");
+const {onDocumentUpdated} = require("firebase-functions/v2/firestore");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 
@@ -226,3 +227,78 @@ exports.sendParcelReminder = onSchedule("every 1 minutes", async (event) => {
     logger.error("Error sending parcel reminders:", error);
   }
 });
+
+// /////////////////////////////////////////
+// Powiadomienie że ktoś zarezerwował paczkę
+exports.notifyOwnerOnParcelReserved = onDocumentUpdated(
+    "parcels/{parcelId}",
+    async (event) => {
+      const beforeData = event.data.before.data();
+      const afterData = event.data.after.data();
+      const parcelId = event.params.parcelId;
+
+      logger.info(`Checking parcel ${parcelId} for status change`);
+
+      // Sprawdź, czy status zmienił się na "inactive"
+      if (beforeData.status !== "inactive" && afterData.status === "inactive") {
+        const ownerId = afterData.userId;
+        if (!ownerId) {
+          logger.error(`Parcel ${parcelId} has no userId`);
+          return;
+        }
+
+        try {
+        // Pobierz dane właściciela
+          const ownerDoc = await admin.firestore()
+              .collection("users")
+              .doc(ownerId)
+              .get();
+
+          if (!ownerDoc.exists) {
+            logger.error(`Owner ${ownerId} not found`);
+            return;
+          }
+
+          const ownerData = ownerDoc.data();
+          const fcmToken = ownerData.fcmToken;
+
+          if (!fcmToken || ownerData.notificationsEnabled === false) {
+            logger.info(`Owner ${ownerId} cannot receive notifications`);
+            return;
+          }
+
+          logger.info(`Sending notification to `+
+          `owner ${ownerId} for parcel ${parcelId}`);
+
+          // Payload powiadomienia
+          const payload = {
+            token: fcmToken,
+            notification: {
+              title: "📦 Your parcel was reserved!",
+              body: `Someone reserved your parcel ` +
+              `"${afterData.title || "Untitled"}"`,
+            },
+            android: {
+              notification: {
+                channelId: "parcel_reserved_channel",
+                sound: "default",
+                color: "#4CAF50",
+                icon: "ic_launcher",
+              },
+            },
+            data: {
+              type: "parcel_reserved",
+              parcelId: parcelId,
+            },
+          };
+
+          const result = await admin.messaging().send(payload);
+          logger.info(`Notification sent to owner ${ownerId}: ${result}`);
+        } catch (error) {
+          logger.error("Error sending parcel reserved notification:", error);
+        }
+      } else {
+        logger.info(`Parcel ${parcelId} status not changed to inactive`);
+      }
+    },
+);
