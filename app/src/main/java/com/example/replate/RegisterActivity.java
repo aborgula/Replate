@@ -316,7 +316,6 @@ public class RegisterActivity extends AppCompatActivity {
                     });
         });
 
-
         signinbtn.setOnClickListener(v -> {
             Animation slideDown = AnimationUtils.loadAnimation(this, R.anim.slide_down);
             slideup.startAnimation(slideDown);

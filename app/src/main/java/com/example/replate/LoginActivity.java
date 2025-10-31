@@ -118,6 +118,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -246,12 +247,6 @@ public class LoginActivity extends AppCompatActivity {
                                             }
 
 
-
-
-
-
-
-
                                             // 🔐 Pobierz FCM token i zapisz do Firestore
                                             FirebaseMessaging.getInstance().getToken()
                                                     .addOnCompleteListener(tokenTask -> {
@@ -263,11 +258,6 @@ public class LoginActivity extends AppCompatActivity {
                                                             if (!documentSnapshot.contains("notificationsEnabled")) {
                                                                 updates.put("notificationsEnabled", true);
                                                             }
-
-                                                           // testNotification(token);
-
-
-
 
 
                                                             db.collection("users").document(userId)
@@ -336,6 +326,56 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    // Wywołaj po pomyślnym logowaniu w googleLoginLauncher:
+    private void handleGoogleSignIn(FirebaseUser user) {
+        if (user == null) return;
+
+        String userId = user.getUid();
+        String email = user.getEmail();
+        String displayName = user.getDisplayName();
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("users").document(userId).get()
+                .addOnSuccessListener(document -> {
+                    if (!document.exists()) {
+                        Map<String, Object> userData = new HashMap<>();
+                        userData.put("email", email);
+                        userData.put("login", displayName);
+                        userData.put("parcelIds", new ArrayList<String>());
+                        userData.put("likedUsers", new ArrayList<String>());
+                        userData.put("likedBy", new ArrayList<String>());
+                        userData.put("orders", new ArrayList<String>());
+                        userData.put("notificationsEnabled", true);
+
+                        // Pobierz token FCM
+                        FirebaseMessaging.getInstance().getToken()
+                                .addOnCompleteListener(tokenTask -> {
+                                    if (tokenTask.isSuccessful()) {
+                                        String fcmToken = tokenTask.getResult();
+                                        userData.put("fcmToken", fcmToken);
+                                    }
+                                    // Zapisz dane użytkownika w Firestore
+                                    db.collection("users").document(userId)
+                                            .set(userData)
+                                            .addOnSuccessListener(aVoid -> {
+                                               // Toast.makeText(this, "User saved in DB", Toast.LENGTH_SHORT).show();
+                                                startActivity(new Intent(this, HomeActivity.class));
+                                                finish();
+                                            });
+                                });
+                    } else {
+                        // Dokument istnieje → przejście do HomeActivity
+                        startActivity(new Intent(this, HomeActivity.class));
+                        finish();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error accessing database: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+
 
     private final ActivityResultLauncher<IntentSenderRequest> googleLoginLauncher =
             registerForActivityResult(new ActivityResultContracts.StartIntentSenderForResult(), result -> {
@@ -350,9 +390,11 @@ public class LoginActivity extends AppCompatActivity {
                             FirebaseAuth.getInstance().signInWithCredential(firebaseCredential)
                                     .addOnCompleteListener(task -> {
                                         if (task.isSuccessful()) {
-                                            Toast.makeText(this, "Google sign-in successful", Toast.LENGTH_SHORT).show();
-                                            startActivity(new Intent(this, HomeActivity.class));
-                                            finish();
+                                           // Toast.makeText(this, "Google sign-in successful", Toast.LENGTH_SHORT).show();
+                                            //startActivity(new Intent(this, HomeActivity.class));
+                                           // finish();
+                                            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                                            handleGoogleSignIn(user);
                                         } else {
                                             Toast.makeText(this, "Firebase sign-in failed", Toast.LENGTH_SHORT).show();
                                         }
@@ -502,58 +544,5 @@ public class LoginActivity extends AppCompatActivity {
             finish();
         }
     }
-
-
-
-// Dodaj gdzieś w swojej klasie (np. MainActivity lub LoginActivity)
-
-    private void testNotification(String fcmToken) {
-        // Uruchom w osobnym wątku (wymagane dla połączeń sieciowych)
-        new Thread(() -> {
-            try {
-                // URL twojej Firebase Cloud Function
-                URL url = new URL("https://us-central1-replate-a116a.cloudfunctions.net/sendLoginNotification");
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-                conn.setDoOutput(true);
-                conn.setDoInput(true);
-
-                // Przygotuj JSON
-                JSONObject jsonParam = new JSONObject();
-                jsonParam.put("fcmToken", fcmToken);
-                jsonParam.put("message", "Test notification from Android!");
-
-                // Wyślij request
-                OutputStream os = conn.getOutputStream();
-                os.write(jsonParam.toString().getBytes("UTF-8"));
-                os.close();
-
-                // Odbierz odpowiedź
-                int responseCode = conn.getResponseCode();
-
-                // Log na głównym wątku
-                runOnUiThread(() -> {
-                    if (responseCode == HttpURLConnection.HTTP_OK) {
-                        Log.d("FCM", "✅ Notification sent successfully! Response: " + responseCode);
-                        Toast.makeText(this, "Powiadomienie wysłane!", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Log.e("FCM", "❌ Failed to send notification. Response code: " + responseCode);
-                        Toast.makeText(this, "Błąd: " + responseCode, Toast.LENGTH_SHORT).show();
-                    }
-                });
-
-                conn.disconnect();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                runOnUiThread(() -> {
-                    Log.e("FCM", "❌ Exception: " + e.getMessage());
-                    Toast.makeText(this, "Błąd: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
-            }
-        }).start();
-    }
-
 }
 

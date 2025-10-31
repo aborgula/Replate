@@ -357,20 +357,4 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
             loadParcelsAndShowMarkers();
         }
     }
-
-
-
-    private BitmapDescriptor getBitmapFromUrl(String imageUrl, int width, int height) {
-        try {
-            java.net.URL url = new java.net.URL(imageUrl);
-            Bitmap image = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-            Bitmap scaled = Bitmap.createScaledBitmap(image, width, height, false);
-            return BitmapDescriptorFactory.fromBitmap(scaled);
-        } catch (Exception e) {
-            Log.e("FragmentMap", "Failed to load image from URL: " + imageUrl + ", " + e.getMessage());
-            return BitmapDescriptorFactory.defaultMarker(); // fallback
-        }
-    }
-
-
 }

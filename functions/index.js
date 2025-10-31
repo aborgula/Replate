@@ -1,5 +1,5 @@
 const {setGlobalOptions} = require("firebase-functions/v2");
-const {onRequest} = require("firebase-functions/v2/https");
+const {onSchedule} = require("firebase-functions/v2/scheduler");
 const {onDocumentCreated} = require("firebase-functions/v2/firestore");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
@@ -9,47 +9,6 @@ admin.initializeApp();
 
 // Ustaw globalne opcje
 setGlobalOptions({maxInstances: 10});
-
-exports.sendLoginNotification = onRequest(async (req, res) => {
-  // CORS (opcjonalnie, jeśli potrzebujesz)
-  res.set("Access-Control-Allow-Origin", "*");
-
-  if (req.method === "OPTIONS") {
-    res.set("Access-Control-Allow-Methods", "POST");
-    res.set("Access-Control-Allow-Headers", "Content-Type");
-    return res.status(204).send("");
-  }
-
-  const {fcmToken, message} = req.body;
-
-  // Walidacja
-  if (!fcmToken || !message) {
-    logger.error("Missing fcmToken or message");
-    return res.status(400).send("Missing fcmToken or message");
-  }
-
-  // Payload powiadomienia
-  const payload = {
-    notification: {
-      title: "Nowe logowanie!",
-      body: message,
-    },
-  };
-
-  try {
-    // Wyślij powiadomienie
-    await admin.messaging().send({
-      token: fcmToken,
-      notification: payload.notification,
-    });
-
-    logger.info("Notification sent successfully to:", fcmToken);
-    res.status(200).send("Notification sent!");
-  } catch (error) {
-    logger.error("Error sending notification:", error);
-    res.status(500).send("Error: " + error.message);
-  }
-});
 
 exports.notifyFavoritesOnNewParcel = onDocumentCreated(
     "parcels/{parcelId}",
@@ -61,7 +20,6 @@ exports.notifyFavoritesOnNewParcel = onDocumentCreated(
 
       // Pobierz userId właściciela paczki
       const ownerId = parcelData.userId;
-
       if (!ownerId) {
         logger.error("Parcel has no userId");
         return;
@@ -99,7 +57,6 @@ exports.notifyFavoritesOnNewParcel = onDocumentCreated(
 
         // Przygotuj powiadomienia
         const notifications = [];
-
         usersSnapshot.forEach((userDoc) => {
           const userData = userDoc.data();
           const fcmToken = userData.fcmToken;
@@ -114,7 +71,6 @@ exports.notifyFavoritesOnNewParcel = onDocumentCreated(
               notification: {
                 title: `🎉 New parcel from ${ownerName}!`,
                 body: `${parcelTitle} is waiting for you!`,
-                // icon: "https://link_do_ikony_replate.png", // opcjonalnie własna ikona online
               },
               android: { // specyficzne ustawienia dla Androida
                 notification: {
@@ -155,3 +111,118 @@ exports.notifyFavoritesOnNewParcel = onDocumentCreated(
       }
     },
 );
+
+// ///////////////////////
+// Powiadomienie przypomnienie o paczce w zamówieniach
+exports.sendParcelReminder = onSchedule("every 1 minutes", async (event) => {
+  const db = admin.firestore();
+  const now = new Date();
+  const localString = now.toLocaleString("en-US", {
+    timeZone: "Europe/Warsaw",
+  });
+  const localNow = new Date(localString);
+
+  const currentDate = localNow.toISOString().split("T")[0]; // "YYYY-MM-DD"
+  const currentHour = localNow.getHours();
+  const currentMinute = localNow.getMinutes();
+
+  logger.info(
+      `Running sendParcelReminder at ${currentHour}:${currentMinute} ` +
+    `on ${currentDate}`,
+  );
+
+  try {
+    const parcelsSnapshot = await db.collection("parcels")
+        .where("date", "==", currentDate)
+        .get();
+
+    if (parcelsSnapshot.empty) {
+      logger.info("No parcels found for today");
+      return null;
+    }
+
+    for (const parcelDoc of parcelsSnapshot.docs) {
+      const parcelData = parcelDoc.data();
+      const parcelId = parcelDoc.id;
+      const startTime = parcelData.startTime; // np. "14:30"
+
+      if (!startTime) {
+        logger.info(`Parcel ${parcelId} has no startTime`);
+        continue;
+      }
+
+      const [startHour, startMinute] = startTime.split(":").map(Number);
+
+      logger.info(
+          `Checking parcel ${parcelId} with startTime ${startHour}:` +
+        `${startMinute}`,
+      );
+
+      if (startHour === currentHour && startMinute === currentMinute) {
+        const usersSnapshot = await db.collection("users")
+            .where("orders", "array-contains", parcelId)
+            .get();
+
+        if (usersSnapshot.empty) {
+          logger.info(
+              `No users found with parcel ${parcelId} in orders`,
+          );
+          continue;
+        }
+
+        const notifications = [];
+        usersSnapshot.forEach((userDoc) => {
+          const userData = userDoc.data();
+          const fcmToken = userData.fcmToken;
+          if (fcmToken && userData.notificationsEnabled !== false) {
+            logger.info(`Adding notification for user ${userDoc.id}`);
+            notifications.push({
+              token: fcmToken,
+              notification: {
+                title: "⏰ It's time for your parcel!",
+                body: `Your parcel "${parcelData.title || "Untitled"}" ` +
+                      `is ready for pickup.`,
+              },
+              data: {
+                type: "parcel_reminder",
+                parcelId: parcelId,
+              },
+              android: {
+                notification: {
+                  channelId: "parcel_reminder_channel",
+                  sound: "default",
+                  color: "#FF9800",
+                  icon: "ic_launcher",
+                },
+              },
+            });
+          } else {
+            logger.info(
+                `Skipping user ${userDoc.id}: no fcmToken or ` +
+              `notifications disabled`,
+            );
+          }
+        });
+
+        if (notifications.length > 0) {
+          const results = await admin.messaging().sendEach(notifications);
+          logger.info(
+              `Sent ${results.successCount} parcel reminders, ` +
+            `failed: ${results.failureCount}`,
+          );
+          results.responses.forEach((res, i) => {
+            if (!res.success) {
+              logger.error(`Notification ${i} failed:`, res.error);
+            }
+          });
+        } else {
+          logger.info("No valid notifications to send for this parcel");
+        }
+      } else {
+        logger.info(`Parcel ${parcelId} not scheduled for this minute`);
+      }
+    }
+  } catch (error) {
+    logger.error("Error sending parcel reminders:", error);
+  }
+});
