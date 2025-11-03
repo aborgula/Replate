@@ -28,6 +28,7 @@ import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.text.Editable;
@@ -169,24 +170,23 @@ public class HomeActivity extends AppCompatActivity {
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == RESULT_OK) {
-                        // Kamera zapisuje do cameraImageFile (FileProvider URI)
-                        if (cameraImageFile != null && cameraImageFile.exists()) {
-                            selectedParcelImageUri = FileProvider.getUriForFile(
-                                    this,
-                                    getPackageName() + ".fileprovider",
-                                    cameraImageFile);
-                            Log.d("Photo", "Camera URI: " + selectedParcelImageUri);
+                        if (cameraImageUri != null) {
+                            selectedParcelImageUri = cameraImageUri;
                             parcelImageView.setImageURI(selectedParcelImageUri);
 
                             // upewnij się, że system udzielił uprawnień:
                             this.grantUriPermission(getPackageName(), selectedParcelImageUri,
                                     Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+                            Log.d("Photo", "Camera URI: " + selectedParcelImageUri);
                         } else {
-                            Log.e("Photo", "Camera file missing or doesn't exist");
+                            Log.e("Photo", "Camera URI is null");
                             Toast.makeText(this, "Photo not saved by camera", Toast.LENGTH_SHORT).show();
                         }
                     }
-                });
+                }
+        );
+
 
 
         binding.bottomNavigationView.setOnItemSelectedListener(item -> {
@@ -1416,7 +1416,9 @@ imageRef.putBytes(imageBytes)
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 1001) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                launchCamera();
+               // launchCamera();
+                openCamera();
+
             } else {
                 Toast.makeText(this, "Camera permission is required", Toast.LENGTH_SHORT).show();
             }
@@ -1505,4 +1507,12 @@ imageRef.putBytes(imageBytes)
 
         binding.bottomNavigationView.setSelectedItemId(R.id.profile);
     }
+
+    private File createImageFile() throws IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        return File.createTempFile(imageFileName, ".jpg", storageDir);
+    }
+
 }

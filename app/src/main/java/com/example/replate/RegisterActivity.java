@@ -184,7 +184,11 @@ public class RegisterActivity extends AppCompatActivity {
                                                                                     .addOnSuccessListener(document -> {
                                                                                         if (!document.exists()) {
                                                                                             Map<String, Object> userData = new HashMap<>();
+                                                                                            userData.put("login", null); // brak loginu przy rejestracji telefonicznej, można dodać później w profilu
+                                                                                            userData.put("email", null);
                                                                                             userData.put("phone", phoneNumber);
+                                                                                            userData.put("address", null);
+                                                                                            userData.put("rating", null);
                                                                                             userData.put("parcelIds", new ArrayList<String>());
                                                                                             userData.put("likedUsers", new ArrayList<String>());
                                                                                             userData.put("likedBy", new ArrayList<String>());
@@ -293,7 +297,6 @@ public class RegisterActivity extends AppCompatActivity {
                                         userData.put("address", null);
                                         userData.put("likedBy", new ArrayList<String>());
                                         userData.put("orders", new ArrayList<String>());
-                                        //userData.put("orders", new HashMap<String, String>());
                                         userData.put("fcmToken", token);
                                         userData.put("notificationsEnabled", true);
 

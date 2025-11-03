@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="12dp"
+    android:orientation="horizontal"
+    android:background="@drawable/dialog_background"
+    android:focusable="true">
+
+    <!-- Zdjęcie paczki po lewej -->
+    <ImageView
+        android:id="@+id/dialogParcelImage"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_gravity="center_vertical"
+        android:scaleType="centerCrop"
+        android:contentDescription="Parcel Image" />
+
+    <!-- Kolumna po prawej -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginStart="12dp"
+        android:gravity="center_vertical">
+
+        <!-- Wiersz z tytułem i ceną -->
+        <!-- Wiersz z tytułem i ceną -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Tytuł paczki -->
+            <TextView
+                android:id="@+id/dialogParcelTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tytuł paczki"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:textSize="18sp" />
+
+            <!-- Odstęp między tytułem a ceną -->
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <!-- Cena paczki -->
+            <TextView
+                android:id="@+id/dialogParcelPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="10 zł"
+                android:textStyle="bold"
+                android:textColor="@color/brown"
+                android:textSize="16dp" />
+
+        </LinearLayout>
+
+
+        <!-- Wiersz z oceną i czasem -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical">
+
+            <!-- Ocena -->
+            <ImageView
+                android:id="@+id/dialogRatingIcon"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_star"
+                app:tint="@color/green"
+                android:contentDescription="Rating" />
+
+            <TextView
+                android:id="@+id/dialogRatingText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4.4"
+                android:layout_marginStart="3dp"
+                android:textSize="14dp"
+                android:textColor="@color/black" />
+
+            <!-- Ikona zegara -->
+            <ImageView
+                android:id="@+id/dialogTimeIcon"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_time"
+                app:tint="@color/brown"
+                android:layout_marginStart="12dp"
+                android:contentDescription="Time" />
+
+            <TextView
+                android:id="@+id/dialogDay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Today,"
+                android:layout_marginStart="4dp"
+                android:textSize="13dp"
+                android:textColor="@color/black" />
+
+            <!-- Tekst: Today, 10:30 - 12:30 -->
+            <TextView
+                android:id="@+id/dialogTimeText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Today, 10:30 - 12:30"
+                android:layout_marginStart="4dp"
+                android:textSize="13dp"
+                android:textColor="@color/black" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

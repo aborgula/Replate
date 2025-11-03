@@ -160,8 +160,6 @@ public class LoginActivity extends AppCompatActivity {
         }
 
 
-
-
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
 
         getWindow().getDecorView().setSystemUiVisibility(
@@ -334,14 +332,27 @@ public class LoginActivity extends AppCompatActivity {
         String email = user.getEmail();
         String displayName = user.getDisplayName();
 
+        if ((displayName == null || displayName.isEmpty()) && email != null) {
+            int atIndex = email.indexOf("@");
+            if (atIndex > 0) {
+                displayName = email.substring(0, atIndex);
+            } else {
+                displayName = "User_" + userId.substring(0, 6); // awaryjna nazwa
+            }
+        }
+
+        final String finalDisplayName = displayName;
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         db.collection("users").document(userId).get()
                 .addOnSuccessListener(document -> {
                     if (!document.exists()) {
                         Map<String, Object> userData = new HashMap<>();
+                        userData.put("login", finalDisplayName);
                         userData.put("email", email);
-                        userData.put("login", displayName);
+                        userData.put("phone", null);
+                        userData.put("address", null);
+                        userData.put("rating", null);
                         userData.put("parcelIds", new ArrayList<String>());
                         userData.put("likedUsers", new ArrayList<String>());
                         userData.put("likedBy", new ArrayList<String>());
@@ -409,11 +420,9 @@ public class LoginActivity extends AppCompatActivity {
             });
 
 
-    // Phone login
     private void startPhoneLogin() {
         LayoutInflater inflater = LayoutInflater.from(this);
         View dialogView = inflater.inflate(R.layout.dialog_phone_input, null);
-
         EditText inputEditText = dialogView.findViewById(R.id.inputEditText);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -444,85 +453,56 @@ public class LoginActivity extends AppCompatActivity {
                 }
 
                 try {
-                    PhoneAuthOptions options =
-                            PhoneAuthOptions.newBuilder(FirebaseAuth.getInstance())
-                                    .setPhoneNumber(phoneNumber)
-                                    .setTimeout(60L, TimeUnit.SECONDS)
-                                    .setActivity(this)
-                                    .setCallbacks(new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-                                        @Override
-                                        public void onVerificationCompleted(@NonNull PhoneAuthCredential credential) {
-                                            FirebaseAuth.getInstance().signInWithCredential(credential)
-                                                    .addOnCompleteListener(task -> {
-                                                        if (task.isSuccessful()) {
-                                                            Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
-                                                            Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-                                                            startActivity(intent);
-                                                            finish();
+                    PhoneAuthOptions options = PhoneAuthOptions.newBuilder(FirebaseAuth.getInstance())
+                            .setPhoneNumber(phoneNumber)
+                            .setTimeout(60L, TimeUnit.SECONDS)
+                            .setActivity(this)
+                            .setCallbacks(new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
 
-                                                            getSharedPreferences("MyPrefs", MODE_PRIVATE)
-                                                                    .edit()
-                                                                    .putBoolean("isLoggedIn", true)
-                                                                    .apply();
+                                @Override
+                                public void onVerificationCompleted(@NonNull PhoneAuthCredential credential) {
+                                    signInWithPhoneCredential(credential, phoneNumber);
+                                }
 
-                                                        } else {
-                                                            Toast.makeText(LoginActivity.this, "Login failed", Toast.LENGTH_SHORT).show();
-                                                        }
-                                                    });
+                                @Override
+                                public void onVerificationFailed(@NonNull FirebaseException e) {
+                                    Toast.makeText(LoginActivity.this, "Verification failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                }
+
+                                @Override
+                                public void onCodeSent(@NonNull String verificationId,
+                                                       @NonNull PhoneAuthProvider.ForceResendingToken token) {
+                                    super.onCodeSent(verificationId, token);
+
+                                    View codeView = LayoutInflater.from(LoginActivity.this)
+                                            .inflate(R.layout.dialog_code_input, null);
+                                    EditText codeInput = codeView.findViewById(R.id.codeEditText);
+
+                                    AlertDialog.Builder codeBuilder = new AlertDialog.Builder(LoginActivity.this);
+                                    codeBuilder.setTitle("Enter login code");
+                                    codeBuilder.setView(codeView);
+                                    codeBuilder.setPositiveButton("Verify", (dialog1, which1) -> {
+                                        String code = codeInput.getText().toString().trim();
+                                        if (!code.isEmpty()) {
+                                            PhoneAuthCredential credential = PhoneAuthProvider.getCredential(verificationId, code);
+                                            signInWithPhoneCredential(credential, phoneNumber);
+                                        } else {
+                                            Toast.makeText(LoginActivity.this, "Please enter the code", Toast.LENGTH_SHORT).show();
                                         }
+                                    });
+                                    codeBuilder.setNegativeButton("Cancel", null);
 
-                                        @Override
-                                        public void onVerificationFailed(@NonNull FirebaseException e) {
-                                            Toast.makeText(LoginActivity.this, "Verification failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                                        }
-
-                                        @Override
-                                        public void onCodeSent(@NonNull String verificationId,
-                                                               @NonNull PhoneAuthProvider.ForceResendingToken token) {
-                                            super.onCodeSent(verificationId, token);
-
-                                            LayoutInflater inflater = LayoutInflater.from(LoginActivity.this);
-                                            View dialogView = inflater.inflate(R.layout.dialog_code_input, null);
-                                            EditText codeInput = dialogView.findViewById(R.id.codeEditText);
-
-                                            AlertDialog.Builder codeBuilder = new AlertDialog.Builder(LoginActivity.this);
-                                            codeBuilder.setTitle("Enter login code");
-                                            codeBuilder.setView(dialogView);
-                                            codeBuilder.setPositiveButton("Verify", (dialog1, which1) -> {
-                                                String code = codeInput.getText().toString().trim();
-                                                if (!code.isEmpty()) {
-                                                    PhoneAuthCredential credential = PhoneAuthProvider.getCredential(verificationId, code);
-                                                    FirebaseAuth.getInstance().signInWithCredential(credential)
-                                                            .addOnCompleteListener(task -> {
-                                                                if (task.isSuccessful()) {
-                                                                    Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
-                                                                    Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-                                                                    startActivity(intent);
-                                                                    finish();
-                                                                } else {
-                                                                    Toast.makeText(LoginActivity.this, "Login failed", Toast.LENGTH_SHORT).show();
-                                                                }
-                                                            });
-                                                } else {
-                                                    Toast.makeText(LoginActivity.this, "Please enter the code", Toast.LENGTH_SHORT).show();
-                                                }
-                                            });
-                                            codeBuilder.setNegativeButton("Cancel", null);
-
-                                            AlertDialog codeDialog = codeBuilder.create();
-                                            codeDialog.setOnShowListener(dialog -> {
-                                                Button positiveButton = codeDialog.getButton(AlertDialog.BUTTON_POSITIVE);
-                                                Button negativeButton = codeDialog.getButton(AlertDialog.BUTTON_NEGATIVE);
-
-                                                positiveButton.setTextColor(ContextCompat.getColor(LoginActivity.this, R.color.brown));
-                                                negativeButton.setTextColor(ContextCompat.getColor(LoginActivity.this, R.color.green));
-                                            });
-
-                                            codeDialog.show();
-                                        }
-
-                                    })
-                                    .build();
+                                    AlertDialog codeDialog = codeBuilder.create();
+                                    codeDialog.setOnShowListener(d -> {
+                                        Button positiveButton = codeDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                                        Button negativeButton = codeDialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+                                        positiveButton.setTextColor(ContextCompat.getColor(LoginActivity.this, R.color.brown));
+                                        negativeButton.setTextColor(ContextCompat.getColor(LoginActivity.this, R.color.green));
+                                    });
+                                    codeDialog.show();
+                                }
+                            })
+                            .build();
 
                     PhoneAuthProvider.verifyPhoneNumber(options);
                     dialog.dismiss();
@@ -537,6 +517,66 @@ public class LoginActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    private void signInWithPhoneCredential(PhoneAuthCredential credential, String phoneNumber) {
+        FirebaseAuth.getInstance().signInWithCredential(credential)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                        if (user != null) {
+                            String userId = user.getUid();
+                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                            db.collection("users").document(userId).get()
+                                    .addOnSuccessListener(document -> {
+                                        if (!document.exists()) {
+                                            Map<String, Object> userData = new HashMap<>();
+                                            userData.put("login", "user");
+                                            userData.put("email", null);
+                                            userData.put("phone", phoneNumber);
+                                            userData.put("address", null);
+                                            userData.put("rating", null);
+                                            userData.put("parcelIds", new ArrayList<String>());
+                                            userData.put("likedUsers", new ArrayList<String>());
+                                            userData.put("likedBy", new ArrayList<String>());
+                                            userData.put("orders", new ArrayList<String>());
+                                            userData.put("notificationsEnabled", true);
+
+                                            FirebaseMessaging.getInstance().getToken()
+                                                    .addOnCompleteListener(tokenTask -> {
+                                                        if (tokenTask.isSuccessful()) {
+                                                            String fcmToken = tokenTask.getResult();
+                                                            userData.put("fcmToken", fcmToken);
+                                                        }
+
+                                                        db.collection("users").document(userId)
+                                                                .set(userData)
+                                                                .addOnSuccessListener(aVoid -> {
+                                                                    Toast.makeText(LoginActivity.this, "New user created", Toast.LENGTH_SHORT).show();
+                                                                    navigateToHome();
+                                                                });
+                                                    });
+                                        } else {
+                                            navigateToHome();
+                                        }
+                                    });
+                        }
+                    } else {
+                        Toast.makeText(LoginActivity.this, "Login failed", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+
+    private void navigateToHome() {
+        getSharedPreferences("MyPrefs", MODE_PRIVATE)
+                .edit()
+                .putBoolean("isLoggedIn", true)
+                .apply();
+
+        startActivity(new Intent(LoginActivity.this, HomeActivity.class));
+        finish();
+    }
+
     private void goToMain() {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null) {
@@ -545,4 +585,3 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 }
-

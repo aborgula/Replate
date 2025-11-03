@@ -7,14 +7,22 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Marker;
@@ -39,9 +47,15 @@ import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 public class FragmentMap extends Fragment implements OnMapReadyCallback {
@@ -54,6 +68,7 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
     private View layoutEmptyMap;
     private com.airbnb.lottie.LottieAnimationView emptyMapAnim;
     private SupportMapFragment mapFragment;
+    private Map<String, Parcel> parcelsMap = new HashMap<>();
 
 
 
@@ -104,15 +119,125 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
     public void onMapReady(@NonNull GoogleMap map) {
         googleMap = map;
 
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
         googleMap.setOnMarkerClickListener(marker -> {
             String clickedParcelId = (String) marker.getTag();
             if (clickedParcelId != null) {
-                Intent intent = new Intent(requireContext(), ParcelActivity.class);
-                intent.putExtra("parcelId", clickedParcelId);
-                startActivity(intent);
+                Parcel parcel = parcelsMap.get(clickedParcelId);
+                if (parcel != null) {
+                    androidx.appcompat.app.AlertDialog dialog =
+                            new androidx.appcompat.app.AlertDialog.Builder(requireContext()).create();
+                    View dialogView = LayoutInflater.from(requireContext())
+                            .inflate(R.layout.dialog_parcel_summary, null);
+
+                    TextView titleTv = dialogView.findViewById(R.id.dialogParcelTitle);
+                    ImageView imageView = dialogView.findViewById(R.id.dialogParcelImage);
+                    TextView ratingText = dialogView.findViewById(R.id.dialogRatingText);
+                    TextView dayText = dialogView.findViewById(R.id.dialogDay);
+                    TextView timeText = dialogView.findViewById(R.id.dialogTimeText);
+                    TextView priceTv = dialogView.findViewById(R.id.dialogParcelPrice); // 🔹 nowy element
+
+                    titleTv.setText(parcel.getTitle());
+
+// 🔹 Wyświetlenie ceny
+                    Double price = parcel.getPrice();
+
+                    if (price == null) {
+                        priceTv.setText("Free");
+                    } else if (price == 0.0) {
+                        priceTv.setText("Free");
+                    } else {
+                        // Jeśli chcesz np. wyświetlać "10 zł"
+                        priceTv.setText(price + " zł");
+                    }
+
+
+                    // Zaokrąglenie rogów zdjęcia
+                    int radiusInPx = (int) (20 * getResources().getDisplayMetrics().density);
+                    Glide.with(requireContext())
+                            .load(parcel.getImageUrl())
+                            .transform(new RoundedCorners(radiusInPx))
+                            .into(imageView);
+
+                    String userId = parcel.getUserId();
+                    if (userId != null && !userId.isEmpty()) {
+                        db.collection("users").document(userId)
+                                .get()
+                                .addOnSuccessListener(documentSnapshot -> {
+                                    if (documentSnapshot.exists()) {
+                                        Double rating = documentSnapshot.getDouble("rating");
+                                        if (rating != null) {
+                                            ratingText.setText(String.format(Locale.getDefault(), "%.1f", rating));
+                                        } else {
+                                            ratingText.setText("—");
+                                        }
+                                    } else {
+                                        ratingText.setText("—");
+                                    }
+                                })
+                                .addOnFailureListener(e -> ratingText.setText("—"));
+                    }
+
+                    // 🔹 Ustal datę i czas odbioru
+                    String date = parcel.getDate();
+                    String startTime = parcel.getStartTime();
+                    String endTime = parcel.getEndTime();
+
+                    try {
+                        LocalDate today = null;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            today = LocalDate.now();
+                        }
+                        LocalDate tomorrow = null;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            tomorrow = today.plusDays(1);
+                        }
+                        LocalDate parcelDate = null;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            parcelDate = LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                        }
+
+                        if (parcelDate.equals(today)) {
+                            dayText.setText("Today,");
+                        } else if (parcelDate.equals(tomorrow)) {
+                            dayText.setText("Tomorrow,");
+                        } else {
+                            DateTimeFormatter formatter = null;
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                formatter = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH);
+                            }
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                dayText.setText(parcelDate.format(formatter) + ",");
+                            }
+                        }
+
+                        timeText.setText(startTime + " - " + endTime);
+                    } catch (Exception e) {
+                        dayText.setText("—");
+                        timeText.setText("—");
+                    }
+
+                    dialog.setView(dialogView);
+
+                    // Kliknięcie całego okna otwiera szczegóły paczki
+                    dialogView.setOnClickListener(v -> {
+                        Intent intent = new Intent(requireContext(), ParcelActivity.class);
+                        intent.putExtra("parcelId", clickedParcelId);
+                        startActivity(intent);
+                        dialog.dismiss();
+                    });
+
+                    dialog.show();
+                }
             }
-            return false;
+            return true;
         });
+
+
+
+
+
 
         if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -266,30 +391,35 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
 
                         if (showParcel) {
                             hasParcels = true;
+
+                            // Tworzymy obiekt Parcel z dokumentu Firestore
+                            Parcel parcel = document.toObject(Parcel.class);
+                            parcel.setId(parcelId); // ustawiamy id bo Firestore go nie zapisuje w obiekcie
+
+                            // Dodajemy do mapy
+                            parcelsMap.put(parcelId, parcel);
+
                             String placeId = document.getString("placeId");
                             String title = document.getString("title");
-                            Log.d("FragmentMap", "Parcel " + parcelId + " will be shown on map with placeId=" + placeId + " and title=" + title);
+                            String imageUrl = document.getString("imageUrl");
 
                             if (placeId != null && !placeId.isEmpty()) {
-                                fetchPlaceAndAddMarker(placeId, title, parcelId);
-                            } else {
-                                Log.d("FragmentMap", "Parcel " + parcelId + " has null/empty placeId");
+                                fetchPlaceAndAddMarker(placeId, title, parcelId, imageUrl);
                             }
                         }
+
                     }
 
                     if (!hasParcels) {
-                        Log.d("FragmentMap", "No parcels to show after filtering");
                     }
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(requireContext(), "Failed to load parcels: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    Log.e("FragmentMap", "Failed to load parcels: " + e.getMessage());
                 });
     }
 
 
-    private void fetchPlaceAndAddMarker(String placeId, String title, String parcelId) {
+/**    private void fetchPlaceAndAddMarker(String placeId, String title, String parcelId) {
         Log.d("FragmentMap", "fetchPlaceAndAddMarker called: placeId=" + placeId + ", title=" + title + ", parcelId=" + parcelId);
 
         List<Place.Field> placeFields = Arrays.asList(Place.Field.LAT_LNG);
@@ -316,8 +446,46 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
                 .addOnFailureListener(exception -> {
                     Log.e("FragmentMap", "Place not found for placeId=" + placeId + ": " + exception.getMessage());
                 });
-    }
+    }**/
+private void fetchPlaceAndAddMarker(String placeId, String title, String parcelId, String imageUrl) {
 
+    List<Place.Field> placeFields = Arrays.asList(Place.Field.LAT_LNG);
+    FetchPlaceRequest request = FetchPlaceRequest.newInstance(placeId, placeFields);
+
+    placesClient.fetchPlace(request)
+            .addOnSuccessListener(response -> {
+                Place place = response.getPlace();
+                LatLng latLng = place.getLatLng();
+
+                if (latLng != null && googleMap != null) {
+                    // Pobierz zdjęcie z URL i ustaw jako ikonę markera
+                    Glide.with(requireContext())
+                            .asBitmap()
+                            .load(imageUrl)
+                            .circleCrop() // opcjonalnie, żeby zdjęcie było okrągłe
+                            .into(new CustomTarget<Bitmap>(70, 70) { // rozmiar markera
+                                @Override
+                                public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                                    MarkerOptions markerOptions = new MarkerOptions()
+                                            .position(latLng)
+                                            .title(title)
+                                            .icon(BitmapDescriptorFactory.fromBitmap(resource));
+
+                                    Marker marker = googleMap.addMarker(markerOptions);
+                                    if (marker != null) {
+                                        marker.setTag(parcelId);
+                                    }
+                                }
+
+                                @Override
+                                public void onLoadCleared(@Nullable Drawable placeholder) {}
+                            });
+                } else {
+                }
+            })
+            .addOnFailureListener(exception -> {
+            });
+}
 
     private void fallbackToCurrentLocation() {
         try {
@@ -337,7 +505,6 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
         }
     }
 
-
     private int timeStringToMinutes(String timeStr) {
         String[] parts = timeStr.split(":");
         int hour = Integer.parseInt(parts[0]);
@@ -349,7 +516,6 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
         // Wczytaj selectedChips z prefs ponownie
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         Set<String> selectedChipsSet = prefs.getStringSet("selectedChips", null);
-        Log.d("selectedtags", "w reloadmarkers w fragmentmap " + selectedChipsSet);
         currentSelectedChips = selectedChipsSet != null ? new ArrayList<>(selectedChipsSet) : new ArrayList<>();
 
         if (googleMap != null) {
