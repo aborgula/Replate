@@ -74,10 +74,6 @@ public class RegisterActivity extends AppCompatActivity {
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        google = findViewById(R.id.google);
-        facebook = findViewById(R.id.facebook);
-        phone = findViewById(R.id.phone);
-
         googleregistration = findViewById(R.id.googleregistration);
         phoneregistration = findViewById(R.id.phoneregistration);
 

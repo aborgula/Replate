@@ -302,3 +302,79 @@ exports.notifyOwnerOnParcelReserved = onDocumentUpdated(
       }
     },
 );
+
+exports.notifyOwnerOnParcelCancelled = onDocumentUpdated(
+    "parcels/{parcelId}",
+    async (event) => {
+      const beforeData = event.data.before.data();
+      const afterData = event.data.after.data();
+      const parcelId = event.params.parcelId;
+
+      const beforeStatus = beforeData.status;
+      const afterStatus = afterData.status;
+
+      // 📌 1. Sprawdź czy paczka została przywrócona jako "active"
+      if (beforeStatus === "inactive" && afterStatus === "active") {
+        const ownerId = afterData.userId;
+        if (!ownerId) {
+          logger.error(`Parcel ${parcelId} has no userId`);
+          return;
+        }
+
+        try {
+          // 🔍 Pobierz dane właściciela
+          const ownerDoc = await admin.firestore()
+              .collection("users")
+              .doc(ownerId)
+              .get();
+
+          if (!ownerDoc.exists) {
+            logger.error(`Owner ${ownerId} not found`);
+            return;
+          }
+
+          const ownerData = ownerDoc.data();
+          const fcmToken = ownerData.fcmToken;
+
+          if (!fcmToken || ownerData.notificationsEnabled === false) {
+            logger.info(`Owner ${ownerId} cannot receive notifications`);
+            return;
+          }
+
+          logger.info(`Sending cancellation notification to owner ${ownerId}`);
+
+          // 💌 Treść powiadomienia
+          const payload = {
+            token: fcmToken,
+            notification: {
+              title: "❗Someone cancelled their reservation",
+              body: `Your parcel "${afterData.title || "Untitled"}" ` +
+                      `is available again.`,
+            },
+            android: {
+              notification: {
+                channelId: "parcel_cancelled_channel",
+                sound: "default",
+                color: "#FF7043",
+                icon: "ic_launcher",
+              },
+            },
+            data: {
+              type: "parcel_cancelled",
+              parcelId: parcelId,
+            },
+          };
+
+          // 🚀 Wyślij powiadomienie
+          const result = await admin.messaging().send(payload);
+          logger.info(`Cancellation notification sent to owner ${ownerId}: ` +
+          `${result}`);
+        } catch (error) {
+          logger.error("Error sending cancellation notification:", error);
+        }
+      } else {
+        logger.info(`Parcel ${parcelId} not reactivated ` +
+        `(no cancellation detected)`);
+      }
+    },
+);

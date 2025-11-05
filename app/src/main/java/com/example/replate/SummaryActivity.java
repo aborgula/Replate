@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -55,13 +56,40 @@ public class SummaryActivity extends AppCompatActivity {
         description = getIntent().getStringExtra("description");
         startTime = getIntent().getStringExtra("startTime");
         endTime = getIntent().getStringExtra("endTime");
-        date = getIntent().getStringExtra("date");  // UWAGA: wcześniej był "day" w Intent
+        date = getIntent().getStringExtra("date");
         address = getIntent().getStringExtra("address");
         price = getIntent().getDoubleExtra("price", 0.0);
         creatorId = getIntent().getStringExtra("creatorId");
-
         titleParcel.setText(title != null ? title : "No title");
         paymentMethod.setOnClickListener(v -> showPaymentBottomSheet());
+
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("parcels").document(parcelId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String imageUrl = documentSnapshot.getString("imageUrl");
+                        if (imageUrl != null && !imageUrl.isEmpty()) {
+                            Glide.with(SummaryActivity.this)
+                                    .load(imageUrl)
+                                    .placeholder(R.drawable.photo_mixed)
+                                    .error(R.drawable.photo_mixed)
+                                    .centerCrop()
+                                    .into(parcel_image);
+                        } else {
+                            parcel_image.setImageResource(R.drawable.photo_mixed);
+                        }
+                    } else {
+                        Log.e("SummaryActivity", "Parcel not found in Firestore");
+                        parcel_image.setImageResource(R.drawable.photo_mixed);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("SummaryActivity", "Error loading parcel image: " + e.getMessage());
+                    parcel_image.setImageResource(R.drawable.photo_mixed);
+                });
+
 
         String pickupText = "Pick up today";
         if (date != null) {
@@ -104,7 +132,6 @@ public class SummaryActivity extends AppCompatActivity {
                 }
             }
         });
-
     }
 
     private void showPaymentBottomSheet() {
@@ -130,8 +157,6 @@ public class SummaryActivity extends AppCompatActivity {
             setImageSize(paymentImage, 35); // 35dp
             bottomSheetDialog.dismiss();
         });
-
-
         bottomSheetDialog.show();
     }
 
@@ -144,7 +169,6 @@ public class SummaryActivity extends AppCompatActivity {
         params.height = px;
         imageView.setLayoutParams(params);
     }
-
 
     private void reserveParcel() {
 
@@ -185,6 +209,4 @@ public class SummaryActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> Log.e("Summary", "Błąd zmiany statusu: " + e.getMessage()));
     }
-
-
 }

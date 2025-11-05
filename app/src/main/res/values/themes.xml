@@ -1,8 +1,21 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.Replate" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <!-- Kolor przewodni aplikacji -->
+        <item name="colorPrimary">@color/brown</item>
+        <item name="colorPrimaryVariant">@color/brown</item>
+        <item name="colorSecondary">@color/brown</item>
+
+        <!-- Brązowy kolor aktywnego podświetlenia (np. EditText, checkbox, suwak) -->
+        <item name="colorControlActivated">@color/brown</item>
+        <item name="colorAccent">@color/brown</item>
+
+        <!-- Kursor w polach tekstowych -->
+        <item name="android:textCursorDrawable">@null</item>
+
+        <!-- (opcjonalnie) Kolor dla przycisków i linków -->
+        <item name="android:colorControlHighlight">@color/brown</item>
+        <item name="android:colorControlNormal">@color/brown</item>
     </style>
 
     <style name="BoldTextChip" parent="Widget.MaterialComponents.Chip.Filter">

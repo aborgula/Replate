@@ -73,6 +73,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -85,6 +86,7 @@ import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.auth.api.identity.BeginSignInRequest;
@@ -141,9 +143,11 @@ public class LoginActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private SignInClient oneTapClient;
     private BeginSignInRequest signInRequest;
+    private TextView forgotpassword;
 
     private static final String TAG = "LoginActivity";
 
+    @SuppressLint("WrongViewCast")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -177,6 +181,8 @@ public class LoginActivity extends AppCompatActivity {
         password = findViewById(R.id.password);
         googleregistration = findViewById(R.id.googleregistration);
         phoneregistration = findViewById(R.id.phoneregistration);
+        forgotpassword = findViewById(R.id.forgotpassword);;
+        forgotpassword.setOnClickListener(v -> showForgotPasswordDialog());
 
         // Slide up animation
         Animation slideUp = AnimationUtils.loadAnimation(this, R.anim.slide_up);
@@ -295,7 +301,6 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-
     // Google sign-in
     private void startGoogleLogin() {
         oneTapClient = Identity.getSignInClient(this);
@@ -386,8 +391,6 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-
-
     private final ActivityResultLauncher<IntentSenderRequest> googleLoginLauncher =
             registerForActivityResult(new ActivityResultContracts.StartIntentSenderForResult(), result -> {
                 if (result.getResultCode() == RESULT_OK) {
@@ -418,7 +421,6 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 }
             });
-
 
     private void startPhoneLogin() {
         LayoutInflater inflater = LayoutInflater.from(this);
@@ -566,7 +568,6 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-
     private void navigateToHome() {
         getSharedPreferences("MyPrefs", MODE_PRIVATE)
                 .edit()
@@ -584,4 +585,48 @@ public class LoginActivity extends AppCompatActivity {
             finish();
         }
     }
+
+    private void showForgotPasswordDialog() {
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View dialogView = inflater.inflate(R.layout.dialog_reset_password, null);
+        EditText inputEditText = dialogView.findViewById(R.id.emailInput);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("RESET PASSWORD");
+        builder.setView(dialogView);
+        builder.setPositiveButton("SEND", null);
+        builder.setNegativeButton("CANCEL", null);
+
+        AlertDialog dialog = builder.create();
+
+        dialog.setOnShowListener(dialogInterface -> {
+            Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+
+            positiveButton.setTextColor(ContextCompat.getColor(this, R.color.brown));
+            negativeButton.setTextColor(ContextCompat.getColor(this, R.color.green));
+
+            positiveButton.setOnClickListener(v2 -> {
+                String email = inputEditText.getText().toString().trim();
+
+                if (email.isEmpty()) {
+                    Toast.makeText(this, "Please enter your email address", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                FirebaseAuth.getInstance().sendPasswordResetEmail(email)
+                        .addOnCompleteListener(task -> {
+                            if (task.isSuccessful()) {
+                                Toast.makeText(this, "Reset link sent to " + email, Toast.LENGTH_LONG).show();
+                                dialog.dismiss();
+                            } else {
+                                Toast.makeText(this, "Error: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                        });
+            });
+        });
+
+        dialog.show();
+    }
+
 }

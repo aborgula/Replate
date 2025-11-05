@@ -129,37 +129,7 @@
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="@android:color/darker_gray" />
-        <LinearLayout
-            android:visibility="gone"
-            android:layout_marginTop="25dp"
-            android:gravity="center"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <ImageButton
-                android:id="@+id/google"
-                android:layout_width="60dp"
-                android:scaleY="0.8"
-                android:scaleX="0.8"
-                android:background="@drawable/register_icons_background"
-                android:layout_height="60dp"
-                android:src="@drawable/ic_google"/>
-            <ImageButton
-                android:id="@+id/facebook"
-                android:layout_width="60dp"
-                android:background="@null"
-                android:layout_height="60dp"
-                android:src="@drawable/ic_facebook"/>
-            <ImageButton
-                android:id="@+id/phone"
-                android:layout_marginStart="12dp"
-                android:layout_width="31dp"
-                android:scaleX="1.5"
-                android:scaleY="1.5"
-                android:background="@drawable/register_icons_background"
-                android:layout_height="31dp"
-                android:src="@drawable/ic_phon"/>
-        </LinearLayout>
+
 
 
 
