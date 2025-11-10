@@ -9,7 +9,6 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.Manifest;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -27,7 +26,6 @@ import com.google.android.material.chip.ChipGroup;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -39,7 +37,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.Locale;
 
-// ... (importy bez zmian)
 
 public class PickupFragment extends Fragment {
 

@@ -13,6 +13,29 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+
+    <!-- Półprzezroczysty overlay tylko nad mapą -->
+    <ImageView
+        android:id="@+id/overlayImageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:scaleType="fitXY"
+        android:clickable="false"
+        android:focusable="false" />
+
+    <!-- Pinezka w centrum mapy -->
+    <ImageView
+        android:id="@+id/centerPin"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_pin_brown"
+        android:elevation="8dp"
+        android:clickable="false"
+        android:focusable="false" />
+
+
     <!-- Górny pasek -->
     <LinearLayout
         android:gravity="center_vertical"
@@ -119,7 +142,7 @@
             xmlns:app="http://schemas.android.com/apk/res-auto"
             android:layout_width="250dp"
             android:layout_height="wrap_content"
-            app:cardElevation="8dp"
+            app:cardElevation="4dp"
             app:cardCornerRadius="15dp"
             app:cardBackgroundColor="@android:color/transparent"
             >

@@ -40,7 +40,7 @@ public class SplashScreen extends AppCompatActivity {
                 1.0f, 1.2f,
                 Animation.RELATIVE_TO_SELF, 0.5f,
                 Animation.RELATIVE_TO_SELF, 0.5f);
-        pulseAnimation.setDuration(280);
+        pulseAnimation.setDuration(200);
         pulseAnimation.setRepeatMode(Animation.REVERSE);
         pulseAnimation.setRepeatCount(5); // 5 powtórzeń (pulsowanie 5 razy)
 
@@ -75,6 +75,6 @@ public class SplashScreen extends AppCompatActivity {
             }
             startActivity(intent);
             finish();
-        }, 3000); // czekaj 3 sekundy (czas 5 pulsacji x 0.5s + trochę zapasu)
+        }, 1400); // czekaj 3 sekundy (czas 5 pulsacji x 0.5s + trochę zapasu)
     }
 }
