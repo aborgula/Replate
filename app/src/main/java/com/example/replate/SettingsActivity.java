@@ -31,7 +31,12 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.WriteBatch;
-
+import com.google.firebase.functions.FirebaseFunctions;
+import com.google.firebase.functions.HttpsCallableResult;
+import java.util.HashMap;
+import java.util.Map;
+import android.content.Intent;
+import android.net.Uri;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,7 +50,7 @@ public class SettingsActivity extends AppCompatActivity {
     ImageView arrowBack;
     EditText addressEditText, phoneEditText, usernameEditText;
     SwitchCompat notificationsSwitch;
-    TextView saveBtn;
+    TextView saveBtn, addBankBtn;
     CardView deleteBtn;
     FirebaseAuth mAuth;
     FirebaseFirestore db;
@@ -55,7 +60,8 @@ public class SettingsActivity extends AppCompatActivity {
     private Map<String, String> addressToPlaceIdMap = new HashMap<>();
     private String selectedFullAddress = "";
     private String selectedPlaceId = null;
-
+    private boolean hasStripeAccount = false;
+    private String currentStripeAccountId = null;
 
 
     @Override
@@ -71,20 +77,26 @@ public class SettingsActivity extends AppCompatActivity {
         notificationsSwitch = findViewById(R.id.notificationsSwitch);
         saveBtn = findViewById(R.id.savebtn);
         deleteBtn = findViewById(R.id.deletebtn);
+        addBankBtn = findViewById(R.id.addBankBtn);
 
         // Init Firebase
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
         currentUser = mAuth.getCurrentUser();
+        handleStripeReturn(getIntent());
+
+
 
         if (currentUser != null) {
             String userId = currentUser.getUid();
+
 
             db.collection("users").document(userId).get().addOnSuccessListener(documentSnapshot -> {
                 if (documentSnapshot.exists()) {
                     String address = documentSnapshot.getString("address");
                     String phone = documentSnapshot.getString("phone");
                     String login = documentSnapshot.getString("login");
+                    String stripeAccountId = documentSnapshot.getString("stripeAccountId");
 
                     if (address != null && !address.isEmpty()) {
                         addressEditText.setText(address);
@@ -103,14 +115,33 @@ public class SettingsActivity extends AppCompatActivity {
                     } else {
                         usernameEditText.setHint("Enter your username");
                     }
+
+                    // Sprawdź czy użytkownik ma konto Stripe
+                    if (stripeAccountId != null && !stripeAccountId.isEmpty()) {
+                        hasStripeAccount = true;
+                        currentStripeAccountId = stripeAccountId;
+                        updateBankButton(true);
+                    } else {
+                        hasStripeAccount = false;
+                        currentStripeAccountId = null;
+                        updateBankButton(false);
+                    }
                 }
             });
-
         }
 
-        // Example usage
+        addBankBtn.setOnClickListener(v -> {
+            if (hasStripeAccount) {
+                // Pokaż dialog potwierdzenia usunięcia
+                showDeleteStripeAccountDialog();
+            } else {
+                // Utwórz nowe konto
+                createStripeAccount();
+            }
+        });
+
         arrowBack.setOnClickListener(v -> finish()); // back button
-        // ZAPIS zmian po kliknięciu
+
         saveBtn.setOnClickListener(v -> {
             String newAddress = addressEditText.getText().toString().trim();
             String newPhone = phoneEditText.getText().toString().trim();
@@ -297,4 +328,135 @@ public class SettingsActivity extends AppCompatActivity {
             });
         }
     }
+
+    private void createStripeAccount() {
+        if (currentUser == null) {
+            Toast.makeText(this, "You must be logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String email = currentUser.getEmail();
+        if (email == null || email.isEmpty()) {
+            Toast.makeText(this, "No email found for this user", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        FirebaseFunctions functions = FirebaseFunctions.getInstance();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("email", email);
+
+        functions
+                .getHttpsCallable("createStripeAccount")
+                .call(data)
+                .addOnSuccessListener(result -> {
+                    Map<String, Object> response = (Map<String, Object>) result.getData();
+                    Boolean success = (Boolean) response.get("success");
+                    String onboardingUrl = (String) response.get("onboardingUrl");
+
+                    if (success != null && success && onboardingUrl != null) {
+                        // Otwieramy przeglądarkę lub WebView z linkiem Stripe
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(onboardingUrl));
+                        startActivity(intent);
+                    } else {
+                        Toast.makeText(this, "Stripe account creation failed", Toast.LENGTH_LONG).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    e.printStackTrace();
+                });
+    }
+
+    private void handleStripeReturn(Intent intent) {
+        Uri data = intent.getData();
+        if (data != null && "replateapp".equals(data.getScheme())) {
+            String path = data.getPath();
+            if ("/stripe/return".equals(path)) {
+                Toast.makeText(this, "Stripe setup completed!", Toast.LENGTH_LONG).show();
+                // Możesz tutaj zaktualizować UI lub sprawdzić status konta
+            } else if ("/stripe/reauth".equals(path)) {
+                Toast.makeText(this, "Please complete Stripe setup", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void updateBankButton(boolean hasAccount) {
+        if (hasAccount) {
+            addBankBtn.setText("Delete Bank Account");
+            addBankBtn.setTextColor(ContextCompat.getColor(this, R.color.white));
+            addBankBtn.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.red));
+        } else {
+            addBankBtn.setText("Add Bank Account");
+            addBankBtn.setTextColor(ContextCompat.getColor(this, R.color.brown));
+            addBankBtn.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.yellow));
+        }
+    }
+
+    private void showDeleteStripeAccountDialog() {
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Delete Stripe Account")
+                .setMessage("Are you sure you want to delete your Stripe account? This will remove your payment capabilities.")
+                .setPositiveButton("Yes, delete", (dialogInterface, which) -> {
+                    deleteStripeAccount();
+                })
+                .setNegativeButton("Cancel", (dialogInterface, which) -> dialogInterface.dismiss())
+                .create();
+
+        dialog.setOnShowListener(dialogInterface -> {
+            Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+
+            positiveButton.setTextColor(ContextCompat.getColor(this, R.color.red));
+            negativeButton.setTextColor(ContextCompat.getColor(this, R.color.green));
+        });
+
+        dialog.show();
+    }
+
+    private void deleteStripeAccount() {
+        if (currentUser == null || currentStripeAccountId == null) {
+            Toast.makeText(this, "No Stripe account to delete", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Pokaż progress dialog
+        AlertDialog progressDialog = new AlertDialog.Builder(this)
+                .setTitle("Deleting Stripe Account")
+                .setMessage("Please wait...")
+                .setCancelable(false)
+                .create();
+        progressDialog.show();
+
+        // Przygotuj dane
+        Map<String, Object> data = new HashMap<>();
+        data.put("accountId", currentStripeAccountId);
+
+        // Wywołaj Cloud Function
+        FirebaseFunctions.getInstance()
+                .getHttpsCallable("deleteStripeAccount")
+                .call(data)
+                .addOnSuccessListener(result -> {
+                    progressDialog.dismiss();
+
+                    Map<String, Object> response = (Map<String, Object>) result.getData();
+                    Boolean success = (Boolean) response.get("success");
+
+                    if (success != null && success) {
+                        // Zaktualizuj lokalny stan
+                        hasStripeAccount = false;
+                        currentStripeAccountId = null;
+                        updateBankButton(false);
+
+                        Toast.makeText(this, "Stripe account deleted successfully", Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(this, "Failed to delete Stripe account", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    progressDialog.dismiss();
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+    }
+
 }

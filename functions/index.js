@@ -1,7 +1,10 @@
 const {setGlobalOptions} = require("firebase-functions/v2");
+const stripe = require("stripe")("sk_test_51SPlUkEROr8YYhc1cI6dEoaYhpNc" +
+"E6GoQ7dRTezVOltJ5UQ0V29AQN6scWmAPkwEX2Ip5rlhacUw0VgsgpMHfom800RaMESoYV");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
 const {onDocumentCreated} = require("firebase-functions/v2/firestore");
 const {onDocumentUpdated} = require("firebase-functions/v2/firestore");
+const {onCall} = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 
@@ -378,3 +381,152 @@ exports.notifyOwnerOnParcelCancelled = onDocumentUpdated(
       }
     },
 );
+
+// Stripe
+exports.createStripeAccount = onCall(async (request) => {
+  try {
+    // Sprawdź czy użytkownik jest zalogowany
+    if (!request.auth) {
+      throw new Error("Musisz być zalogowany");
+    }
+
+    const userId = request.auth.uid;
+    const email = request.data.email;
+
+    // Utwórz konto Stripe Connect Express
+    const account = await stripe.accounts.create({
+      type: "express",
+      country: "PL",
+      email: email,
+      capabilities: {
+        // card_payments: {requested: true},
+        transfers: {requested: true},
+      },
+    });
+
+    // Zapisz account ID w Firebase
+    await admin.firestore().collection("users").doc(userId).update({
+      stripeAccountId: account.id,
+    });
+
+    // Utwórz link do onboardingu
+    const accountLink = await stripe.accountLinks.create({
+      account: account.id,
+      refresh_url: "https://replate-a116a.web.app/stripe-reauth.html",
+      return_url: "https://replate-a116a.web.app/stripe-return.html",
+      type: "account_onboarding",
+    });
+
+    return {
+      success: true,
+      accountId: account.id,
+      onboardingUrl: accountLink.url,
+    };
+  } catch (error) {
+    logger.error("Błąd:", error);
+    throw new Error(error.message);
+  }
+});
+
+// Delete Stripe
+exports.deleteStripeAccount = onCall(async (request) => {
+  try {
+    // Sprawdź czy użytkownik jest zalogowany
+    if (!request.auth) {
+      throw new Error("Musisz być zalogowany");
+    }
+
+    const userId = request.auth.uid;
+    const accountId = request.data.accountId;
+
+    if (!accountId) {
+      throw new Error("Brak ID konta Stripe");
+    }
+
+    // Usuń konto ze Stripe
+    await stripe.accounts.del(accountId);
+
+    // Usuń stripeAccountId z Firestore
+    await admin.firestore().collection("users").doc(userId).update({
+      stripeAccountId: admin.firestore.FieldValue.delete(),
+    });
+
+    return {
+      success: true,
+      message: "Stripe account deleted successfully",
+    };
+  } catch (error) {
+    logger.error("Błąd usuwania konta Stripe:", error);
+    throw new Error(error.message);
+  }
+});
+
+exports.createPaymentIntent = onCall(async (request) => {
+  try {
+    // Sprawdź czy użytkownik jest zalogowany
+    if (!request.auth) {
+      throw new Error("Musisz być zalogowany");
+    }
+
+    const userId = request.auth.uid;
+    const {parcelId, amount} = request.data;
+
+    if (!parcelId || !amount) {
+      throw new Error("Brak wymaganych danych");
+    }
+
+    // Pobierz dane paczki
+    const parcelDoc = await admin.firestore()
+        .collection("parcels")
+        .doc(parcelId)
+        .get();
+
+    if (!parcelDoc.exists) {
+      throw new Error("Paczka nie istnieje");
+    }
+
+    const parcelData = parcelDoc.data();
+    const creatorId = parcelData.userId;
+
+    // Pobierz stripeAccountId twórcy paczki
+    const creatorDoc = await admin.firestore()
+        .collection("users")
+        .doc(creatorId)
+        .get();
+
+    if (!creatorDoc.exists) {
+      throw new Error("Twórca paczki nie istnieje");
+    }
+
+    const stripeAccountId = creatorDoc.data().stripeAccountId;
+
+    if (!stripeAccountId) {
+      throw new Error("Twórca nie ma podłączonego konta Stripe");
+    }
+
+    // Utwórz Payment Intent z transferem na konto twórcy
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100), // Stripe używa groszy
+      currency: "pln",
+      transfer_data: {
+        destination: stripeAccountId, // Konto twórcy paczki
+      },
+      metadata: {
+        parcelId: parcelId,
+        buyerId: userId,
+        creatorId: creatorId,
+      },
+    });
+
+    logger.info(`Payment Intent utworzony: ${paymentIntent.id}`);
+
+    return {
+      success: true,
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+    };
+  } catch (error) {
+    logger.error("Błąd tworzenia Payment Intent:", error);
+    throw new Error(error.message);
+  }
+});

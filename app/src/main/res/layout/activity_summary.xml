@@ -132,7 +132,7 @@
             android:id="@+id/paymentImage"
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:src="@drawable/ic_przelewy24"
+            android:src="@drawable/ic_cash"
             android:contentDescription="Left icon"
             android:layout_marginEnd="8dp" />
 
@@ -142,7 +142,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Przelewy24"
+            android:text="Cash"
             android:textSize="16sp"
             android:textColor="@android:color/black" />
 

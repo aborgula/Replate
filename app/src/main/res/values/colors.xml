@@ -13,4 +13,5 @@
     <color name="slider_active_color">#8B4513</color>  <!-- Brązowy kolor aktywnego suwaka -->
     <color name="slider_inactive_color">#D3D3D3</color>  <!-- Jasnoszary kolor nieaktywnego suwaka -->
     <color name="slider_thumb_color">#8B4513</color>
+    <color name="red">#FF0000</color>
 </resources>

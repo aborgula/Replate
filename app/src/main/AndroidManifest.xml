@@ -40,7 +40,16 @@
             android:exported="false" />
         <activity
             android:name=".SettingsActivity"
-            android:exported="false" />
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="replateapp"
+                    android:host="stripe" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".ParcelActivity"
             android:exported="false" />
@@ -97,7 +106,9 @@
             </intent-filter>
         </service>
 
-
+        <meta-data
+            android:name="com.stripe.android.PublishableKey"
+            android:value="pk_test_51SPlUkEROr8YYhc1Bs9MH36gpNPQQznGJlRtsDIT2R8kabRWuBOhBsHsPZ22rF8vV6O1UbHOJrwP1gjuIIcZ1hNF00dVRncrQE"/>
     </application>
 
 </manifest>

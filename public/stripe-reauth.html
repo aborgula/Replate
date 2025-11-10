@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Complete Stripe Setup</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .container {
+            background: white;
+            color: #333;
+            padding: 40px;
+            border-radius: 10px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        h1 { color: #ff5722; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>⚠️ Setup Incomplete</h1>
+    <p>Please complete your Stripe account setup.</p>
+    <p><strong>Return to the app and try again.</strong></p>
+</div>
+<script>
+    setTimeout(() => {
+        window.location.href = "replateapp://stripe/reauth";
+    }, 1000);
+</script>
+</body>
+</html>

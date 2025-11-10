@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stripe Setup Complete</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: white;
+            color: #333;
+            padding: 40px;
+            border-radius: 10px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        h1 { color: #4CAF50; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>✅ Setup Complete!</h1>
+    <p>Your Stripe account has been set up successfully.</p>
+    <p><strong>You can now close this window and return to the app.</strong></p>
+</div>
+<script>
+    // Próba przekierowania do aplikacji
+    setTimeout(() => {
+        window.location.href = "replateapp://stripe/return";
+    }, 1000);
+</script>
+</body>
+</html>
