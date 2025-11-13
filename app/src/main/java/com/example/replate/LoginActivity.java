@@ -198,7 +198,9 @@ public class LoginActivity extends AppCompatActivity {
             slideDown.setAnimationListener(new Animation.AnimationListener() {
                 @Override
                 public void onAnimationEnd(Animation animation) {
-                    startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
+                  //  startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
+                    startActivity(new Intent(LoginActivity.this, IntroductionActivity.class));
+
                     overridePendingTransition(0, 0);
                     finish();
                 }
@@ -630,3 +632,5 @@ public class LoginActivity extends AppCompatActivity {
     }
 
 }
+
+

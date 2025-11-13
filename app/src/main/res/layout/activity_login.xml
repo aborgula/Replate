@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<ScrollView
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@drawable/mainbackground">
+<LinearLayout
+
     android:gravity="center_horizontal"
     android:orientation="vertical"
     android:layout_width="match_parent"
@@ -23,7 +29,8 @@
         android:visibility="visible"
         android:id="@+id/slidein"
         android:layout_width="match_parent"
-        android:layout_height="800dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_marginTop="38dp"
         android:background="@drawable/login_banner_background"
         android:orientation="vertical">
@@ -293,3 +300,4 @@
 </LinearLayout>
 
 
+</ScrollView>

@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -127,6 +129,7 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
 
                     TextView titleTv = dialogView.findViewById(R.id.dialogParcelTitle);
                     ImageView imageView = dialogView.findViewById(R.id.dialogParcelImage);
+                    ImageView dialogRatingIcon = dialogView.findViewById(R.id.dialogRatingIcon);
                     TextView ratingText = dialogView.findViewById(R.id.dialogRatingText);
                     TextView dayText = dialogView.findViewById(R.id.dialogDay);
                     TextView timeText = dialogView.findViewById(R.id.dialogTimeText);
@@ -163,14 +166,19 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
                                         Double rating = documentSnapshot.getDouble("rating");
                                         if (rating != null) {
                                             ratingText.setText(String.format(Locale.getDefault(), "%.1f", rating));
+                                            dialogRatingIcon.setImageResource(R.drawable.star_full);
                                         } else {
-                                            ratingText.setText("—");
+                                            ratingText.setText("No ratings");
+                                            dialogRatingIcon.setImageResource(R.drawable.no_review);
+                                            dialogRatingIcon.setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
                                         }
                                     } else {
-                                        ratingText.setText("—");
+                                        ratingText.setText("No ratings");
+                                        dialogRatingIcon.setImageResource(R.drawable.no_review);
+                                        dialogRatingIcon.setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
                                     }
                                 })
-                                .addOnFailureListener(e -> ratingText.setText("—"));
+                                .addOnFailureListener(e -> ratingText.setText("No ratings"));
                     }
 
                     // 🔹 Ustal datę i czas odbioru
@@ -229,10 +237,6 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
         });
 
 
-
-
-
-
         if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(requireActivity(),
@@ -241,7 +245,6 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
             return;
         }
 
-        // SharedPreferences
         String lastPlaceId = requireContext()
                 .getSharedPreferences("MyPrefs", 0)
                 .getString("lastPlaceId", null);
@@ -264,7 +267,7 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
             fallbackToCurrentLocation();
         }
 
-        loadParcelsAndShowMarkers();  // 🔁 to ładuje paczki i przypisuje parcelId do markerów
+        loadParcelsAndShowMarkers();
     }
 
 
@@ -289,7 +292,6 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
             return;
         }
 
-        // SharedPreferences
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         String selectedDateTmp = prefs.getString("selectedDate", "");
 
@@ -301,7 +303,6 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
             prefs.edit().putString("selectedDate", todayDate).apply();
             selectedDateTmp = todayDate;
 
-            Log.d("FragmentMap", "selectedDate was empty, set to today: " + selectedDateTmp);
         } else {
             Log.d("FragmentMap", "selectedDate from prefs: " + selectedDateTmp);
         }
@@ -412,35 +413,6 @@ public class FragmentMap extends Fragment implements OnMapReadyCallback {
                 });
     }
 
-
-/**    private void fetchPlaceAndAddMarker(String placeId, String title, String parcelId) {
-        Log.d("FragmentMap", "fetchPlaceAndAddMarker called: placeId=" + placeId + ", title=" + title + ", parcelId=" + parcelId);
-
-        List<Place.Field> placeFields = Arrays.asList(Place.Field.LAT_LNG);
-        FetchPlaceRequest request = FetchPlaceRequest.newInstance(placeId, placeFields);
-
-        placesClient.fetchPlace(request)
-                .addOnSuccessListener(response -> {
-                    Place place = response.getPlace();
-                    LatLng latLng = place.getLatLng();
-                    Log.d("FragmentMap", "Place fetched: " + place + ", latLng=" + latLng);
-
-                    if (latLng != null && googleMap != null) {
-                        Marker marker = googleMap.addMarker(new MarkerOptions().position(latLng).title(title));
-                        if (marker != null) {
-                            Log.d("FragmentMap", "Marker added for parcelId=" + parcelId + " at " + latLng);
-                            marker.setTag(parcelId);
-                        } else {
-                            Log.e("FragmentMap", "Failed to add marker for parcelId=" + parcelId);
-                        }
-                    } else {
-                        Log.e("FragmentMap", "LatLng is null or googleMap is null for parcelId=" + parcelId);
-                    }
-                })
-                .addOnFailureListener(exception -> {
-                    Log.e("FragmentMap", "Place not found for placeId=" + placeId + ": " + exception.getMessage());
-                });
-    }**/
 private void fetchPlaceAndAddMarker(String placeId, String title, String parcelId, String imageUrl) {
 
     List<Place.Field> placeFields = Arrays.asList(Place.Field.LAT_LNG);

@@ -5,8 +5,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
-
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -17,7 +15,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -34,10 +31,8 @@ import com.google.firebase.auth.PhoneAuthOptions;
 import com.google.firebase.auth.PhoneAuthProvider;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.messaging.FirebaseMessaging;
-
 import android.util.Log;
 import android.widget.Toast;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,7 +44,6 @@ public class RegisterActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private GoogleSignInClient mGoogleSignInClient;
     private static final int RC_SIGN_IN = 9001;
-
     private ImageButton google, facebook, phone;
     private CardView registerbtn, signinbtn;
     private EditText login, mail, password;
@@ -73,18 +67,13 @@ public class RegisterActivity extends AppCompatActivity {
                 .build();
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-
         googleregistration = findViewById(R.id.googleregistration);
         phoneregistration = findViewById(R.id.phoneregistration);
-
         googleregistration.setOnClickListener(v->signInWithGoogle());
-
         LinearLayout slideup = findViewById(R.id.slideup);
         Animation slideUp = AnimationUtils.loadAnimation(this, R.anim.slide_up);
         slideup.setVisibility(View.VISIBLE);
         slideup.startAnimation(slideUp);
-
-
         registerbtn = findViewById(R.id.registerbtn);
         signinbtn = findViewById(R.id.signinbtn);
         login = findViewById(R.id.login);
@@ -100,7 +89,7 @@ public class RegisterActivity extends AppCompatActivity {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("Input your phone number");
             builder.setView(dialogView);
-            builder.setPositiveButton("OK", null);  // null, bo nadpiszemy później listener
+            builder.setPositiveButton("OK", null);
             builder.setNegativeButton("Cancel", null);
 
             AlertDialog dialog = builder.create();

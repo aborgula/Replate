@@ -6,8 +6,6 @@ public class Review {
     private String userId;
     private String authorLogin; // nowe pole
 
-    public Review() {}
-
     public Review(int value, String description, String userId, String authorLogin) {
         this.value = value;
         this.description = description;

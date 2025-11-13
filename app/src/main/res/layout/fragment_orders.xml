@@ -49,6 +49,9 @@
             android:textStyle="bold"
             android:paddingHorizontal="56dp"
             android:textColor="@android:color/black"
-            android:layout_marginTop="12dp"/>
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:textAlignment="center"/>
+
     </LinearLayout>
 </FrameLayout>

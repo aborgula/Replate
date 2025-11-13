@@ -1,14 +1,18 @@
 package com.example.replate;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import android.provider.MediaStore;
 import android.util.Base64;
@@ -40,6 +44,8 @@ public class ProfileFragment extends Fragment {
     private FirebaseUser currentUser;
     private CardView logoutBtn, settingsbtn, packagesbtn, reviewsbtn;
     private TextView userLogin;
+    private ActivityResultLauncher<String> cameraPermissionLauncher;
+    private ActivityResultLauncher<Intent> cameraLauncher;
 
 
 
@@ -79,6 +85,30 @@ public class ProfileFragment extends Fragment {
             currentUser = FirebaseAuth.getInstance().getCurrentUser();
             finalUserId = currentUser.getUid();   // pokazujemy własny profil
         }
+
+        cameraPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (isGranted) {
+                        openCamera();
+                    } else {
+                        Toast.makeText(getContext(), "Camera permission denied", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+
+        cameraLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == getActivity().RESULT_OK && result.getData() != null) {
+                        Bundle extras = result.getData().getExtras();
+                        Bitmap imageBitmap = (Bitmap) extras.get("data");
+                        profileImage.setImageBitmap(imageBitmap);
+                        uploadImageAsBase64(imageBitmap);
+                    }
+                }
+        );
+
 
         firestore.collection("users").document(finalUserId).get()
                 .addOnSuccessListener(documentSnapshot -> {
@@ -145,26 +175,31 @@ public class ProfileFragment extends Fragment {
             startActivity(intent);
         });
 
-
-
         profileImage.setOnClickListener(v -> {
             String[] options = {"Choose from gallery", "Take a photo"};
             new AlertDialog.Builder(getContext())
                     .setTitle("Change profile picture")
-                    .setItems(options, (dialog, which) -> {
+                    .setItems(options, (dialogInterface, which) -> {
                         if (which == 0) {
                             pickImageFromGallery();
                         } else {
-                            takePhotoWithCamera();
+                            // Sprawdź, czy zgoda już jest
+                            if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA)
+                                    == PackageManager.PERMISSION_GRANTED) {
+                                openCamera();
+                            } else {
+                                // poproś o zgodę
+                                cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
+                            }
                         }
                     }).show();
         });
+
 
         if (imageUri != null) {
             uploadImageToFirebase(imageUri);
         }
 
-        // Inflate the layout for this fragment
         return view;
     }
 
@@ -178,10 +213,8 @@ public class ProfileFragment extends Fragment {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (intent.resolveActivity(requireActivity().getPackageManager()) != null) {
             startActivityForResult(intent, REQUEST_IMAGE_CAPTURE);
-        } else {
-            Toast.makeText(getContext(), "No camera app found", Toast.LENGTH_SHORT).show();
-        }
-    }
+        } else { Toast.makeText(getContext(),
+                "No camera app found", Toast.LENGTH_SHORT).show(); } }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -270,15 +303,15 @@ public class ProfileFragment extends Fragment {
 
         if (rating == 6) {
             for (ImageView star : stars) {
-                star.setImageResource(R.drawable.no_review); // specjalna ikona np. z pytajnikiem
+                star.setImageResource(R.drawable.no_review);
                 ViewGroup.LayoutParams params = star.getLayoutParams();
                 params.width = dpToPx(40);
                 params.height = dpToPx(40);
                 star.setLayoutParams(params);
             }
-            noreviews.setVisibility(View.VISIBLE); // pokaż napis "Brak ocen"
+            noreviews.setVisibility(View.VISIBLE);
         } else {
-            noreviews.setVisibility(View.GONE); // ukryj tekst jeśli są oceny
+            noreviews.setVisibility(View.GONE);
 
             for (int i = 0; i < 5; i++) {
                 ImageView star = stars[i];
@@ -307,5 +340,15 @@ public class ProfileFragment extends Fragment {
         float density = getResources().getDisplayMetrics().density;
         return Math.round(dp * density);
     }
+
+    private void openCamera() {
+        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (cameraIntent.resolveActivity(requireActivity().getPackageManager()) != null) {
+            cameraLauncher.launch(cameraIntent);
+        } else {
+            Toast.makeText(getContext(), "No camera app found", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 
 }

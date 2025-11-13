@@ -350,265 +350,7 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
-    /**private void showAddParcelStep3Dialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        LayoutInflater inflater = LayoutInflater.from(this);
-        View dialogView = inflater.inflate(R.layout.dialog_add_parcel_step3, null);
-        builder.setView(dialogView);
 
-        FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-
-        LinearLayout mylocation;
-        mylocation = dialogView.findViewById(R.id.mylocation);
-
-        back = dialogView.findViewById(R.id.back);
-        next = dialogView.findViewById(R.id.next);
-
-        builder.setTitle("Choose time and location");
-        AlertDialog dialog = builder.create();
-
-        MaterialButton todayBtn = dialogView.findViewById(R.id.todayfltr);
-        MaterialButton tomorrowBtn = dialogView.findViewById(R.id.tomorrowfltr);
-
-        highlightButton(todayBtn, true);
-        highlightButton(tomorrowBtn, false);
-
-        todayBtn.setOnClickListener(v -> {
-            highlightButton(todayBtn, true);
-            highlightButton(tomorrowBtn, false);
-            selectedDay = "today";
-
-        });
-
-        tomorrowBtn.setOnClickListener(v -> {
-            highlightButton(todayBtn, false);
-            highlightButton(tomorrowBtn, true);
-            selectedDay = "tomorrow";
-        });
-
-        back.setOnClickListener(v -> {
-            dialog.dismiss();
-            showAddParcelStep2Dialog();
-        });
-
-        next.setOnClickListener(v -> {
-            if (selectedFullAddress.isEmpty() || selectedPlaceId == null) {
-                Toast.makeText(this, "Please select a valid address from suggestions", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            dialog.dismiss();
-            showAddParcelStep4Dialog();
-        });
-
-        dialog.setOnCancelListener(dialogInterface -> {
-            title = "";
-            description = "";
-            selectedTags.clear();
-            startTime = "";
-            endTime = "";
-            selectedFullAddress = "";
-            selectedPlaceId = "";
-            addressToPlaceIdMap.clear();
-            selectedParcelImageUri = null;
-            phoneNumber = "";
-            price = 0.0;
-            selectedDay = "today";
-        });
-
-
-        TextView startTimeText = dialogView.findViewById(R.id.startTimeText);
-        TextView endTimeText = dialogView.findViewById(R.id.endTimeText);
-
-        final Calendar startCalendar = Calendar.getInstance();
-        final Calendar endCalendar = Calendar.getInstance();
-
-        startCalendar.setTimeInMillis(System.currentTimeMillis());
-        endCalendar.setTimeInMillis(System.currentTimeMillis() + 2 * 60 * 60 * 1000); // 2 godziny
-
-        if (startTime.isEmpty() || endTime.isEmpty()) {
-            Calendar now = Calendar.getInstance();
-            startTime = String.format(Locale.getDefault(), "%02d:%02d",
-                    now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE));
-
-            now.add(Calendar.HOUR_OF_DAY, 2);
-            endTime = String.format(Locale.getDefault(), "%02d:%02d",
-                    now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE));
-        }
-
-        startTimeText.setText(startTime);
-        endTimeText.setText(endTime);
-
-        startTimeText.setOnClickListener(v -> {
-            showTimePicker((hour, minute) -> {
-                startCalendar.set(Calendar.HOUR_OF_DAY, hour);
-                startCalendar.set(Calendar.MINUTE, minute);
-
-                startTime = String.format(Locale.getDefault(), "%02d:%02d", hour, minute);
-                startTimeText.setText(startTime);
-
-                long diffMillis = endCalendar.getTimeInMillis() - startCalendar.getTimeInMillis();
-                long diffMinutes = diffMillis / (1000 * 60);
-
-                if (diffMinutes < 30) {
-                    Calendar newEnd = (Calendar) startCalendar.clone();
-                    newEnd.add(Calendar.MINUTE, 30);
-
-                    endCalendar.setTimeInMillis(newEnd.getTimeInMillis());
-                    int endHour = newEnd.get(Calendar.HOUR_OF_DAY);
-                    int endMinute = newEnd.get(Calendar.MINUTE);
-
-                    endTime = String.format(Locale.getDefault(), "%02d:%02d", endHour, endMinute);
-                    endTimeText.setText(endTime);
-                }
-            });
-        });
-
-        endTimeText.setOnClickListener(v -> {
-            showTimePicker((hour, minute) -> {
-                endCalendar.set(Calendar.HOUR_OF_DAY, hour);
-                endCalendar.set(Calendar.MINUTE, minute);
-
-                long diffMillis = endCalendar.getTimeInMillis() - startCalendar.getTimeInMillis();
-                long diffMinutes = diffMillis / (1000 * 60);
-
-                if (diffMinutes >= 30) {
-                    endTime = String.format(Locale.getDefault(), "%02d:%02d", hour, minute);
-                    endTimeText.setText(endTime);
-                } else {
-                    Toast.makeText(this, "End time must be at least 30 minutes after start time", Toast.LENGTH_SHORT).show();
-                }
-            });
-        });
-
-        AutoCompleteTextView locationInput = dialogView.findViewById(R.id.locationAutoComplete);
-
-        PlacesClient placesClient = Places.createClient(this);
-        AutocompleteSessionToken token = AutocompleteSessionToken.newInstance();
-
-        if (selectedFullAddress != null && !selectedFullAddress.isEmpty()) {
-            locationInput.setText(selectedFullAddress);
-            // Opcjonalnie przesun kursor na koniec tekstu:
-            locationInput.setSelection(selectedFullAddress.length());
-        }
-
-        locationInput.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (!s.toString().isEmpty()) {
-                    FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
-                            .setTypeFilter(TypeFilter.ADDRESS)
-                            .setSessionToken(token)
-                            .setQuery(s.toString())
-                            .build();
-
-                    placesClient.findAutocompletePredictions(request)
-                            .addOnSuccessListener(response -> {
-                                List<String> suggestions = new ArrayList<>();
-                                addressToPlaceIdMap.clear();
-
-                                for (AutocompletePrediction prediction : response.getAutocompletePredictions()) {
-                                    String fullAddress = prediction.getFullText(null).toString();
-                                    String placeId = prediction.getPlaceId();
-
-                                    suggestions.add(fullAddress);
-                                    addressToPlaceIdMap.put(fullAddress, placeId);  // zapisz
-                                }
-
-                                ArrayAdapter<String> adapter = new ArrayAdapter<>(dialogView.getContext(),
-                                        android.R.layout.simple_dropdown_item_1line, suggestions);
-                                locationInput.setAdapter(adapter);
-                                locationInput.showDropDown();
-                                locationInput.setOnItemClickListener((parent, view, position, id) -> {
-                                    selectedFullAddress = (String) parent.getItemAtPosition(position);
-                                    selectedPlaceId = addressToPlaceIdMap.get(selectedFullAddress);
-
-                                    if (!selectedFullAddress.matches(".*\\d+.*")) {
-                                        locationInput.setError("Please select a full address with a house number");
-                                        selectedPlaceId = null;
-                                    } else {
-                                        locationInput.setError(null); // poprawny wybór
-                                    }
-                                });
-                            });
-                }
-            }
-        });
-
-        mylocation.setOnClickListener(v -> {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Location permission not granted", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
-                if (location != null) {
-                    double lat = location.getLatitude();
-                    double lng = location.getLongitude();
-
-                    // Reverse geocoding (zamiana lat/lng na adres)
-                    Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-                    try {
-                        List<Address> addresses = geocoder.getFromLocation(lat, lng, 1);
-                        if (addresses != null && !addresses.isEmpty()) {
-                            String addressLine = addresses.get(0).getAddressLine(0);
-                            locationInput.setText(addressLine);
-                            locationInput.setSelection(addressLine.length());
-                            selectedFullAddress = addressLine;
-
-                            // Uzyskaj placeId dla adresu
-                            FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
-                                    .setTypeFilter(TypeFilter.ADDRESS)
-                                    .setSessionToken(token)
-                                    .setQuery(addressLine)
-                                    .build();
-
-                            placesClient.findAutocompletePredictions(request)
-                                    .addOnSuccessListener(response -> {
-                                        for (AutocompletePrediction prediction : response.getAutocompletePredictions()) {
-                                            if (prediction.getFullText(null).toString().equals(addressLine)) {
-                                                selectedPlaceId = prediction.getPlaceId();
-                                                break;
-                                            }
-                                        }
-
-                                        if (selectedPlaceId == null) {
-                                            locationInput.setError("Could not find place ID for this location");
-                                        } else {
-                                            locationInput.setError(null);
-                                        }
-                                    });
-                        } else {
-                            Toast.makeText(this, "Could not determine address", Toast.LENGTH_SHORT).show();
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        Toast.makeText(this, "Geocoder failed", Toast.LENGTH_SHORT).show();
-                    }
-                } else {
-                    Toast.makeText(this, "Location not available", Toast.LENGTH_SHORT).show();
-                }
-            });
-        });
-
-        dialog.show();
-
-        dialog.setOnCancelListener(dialogInterface -> {
-            title = "";
-            description = "";
-            selectedTags.clear();
-            startTime = "";
-            endTime = "";
-            selectedFullAddress = "";
-            selectedPlaceId = "";
-            addressToPlaceIdMap.clear();
-            selectedParcelImageUri = null;
-        });
-    }**/
     private void showAddParcelStep3Dialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = LayoutInflater.from(this);
@@ -795,18 +537,6 @@ public class HomeActivity extends AppCompatActivity {
                                 locationInput.setAdapter(adapter);
                                 locationInput.showDropDown();
 
-                                /**locationInput.setOnItemClickListener((parent, view, position, id) -> {
-                                    selectedFullAddress = (String) parent.getItemAtPosition(position);
-                                    selectedPlaceId = addressToPlaceIdMap.get(selectedFullAddress);
-
-                                    if (!selectedFullAddress.matches(".*\\d+.*")) {
-                                        locationInput.setError("Please select a full address with a house number");
-                                        selectedPlaceId = null;
-                                    } else {
-                                        locationInput.setError(null);
-                                    }
-                                });**/
-
                                 locationInput.setOnItemClickListener((parent, view, position, id) -> {
                                     selectedFullAddress = (String) parent.getItemAtPosition(position);
                                     selectedPlaceId = addressToPlaceIdMap.get(selectedFullAddress);
@@ -823,7 +553,7 @@ public class HomeActivity extends AppCompatActivity {
                                             FetchPlaceRequest fetchPlaceRequest = FetchPlaceRequest.builder(selectedPlaceId, placeFields).build();
 
                                             placesClient.fetchPlace(fetchPlaceRequest)
-                                                    .addOnSuccessListener(placeResponse -> {   // <- zmieniliśmy nazwę na placeResponse
+                                                    .addOnSuccessListener(placeResponse -> {
                                                         if (placeResponse.getPlace().getLatLng() != null) {
                                                             selectedLat = placeResponse.getPlace().getLatLng().latitude;
                                                             selectedLng = placeResponse.getPlace().getLatLng().longitude;
@@ -878,8 +608,9 @@ public class HomeActivity extends AppCompatActivity {
                             placesClient.findAutocompletePredictions(request)
                                     .addOnSuccessListener(response -> {
                                         for (AutocompletePrediction prediction : response.getAutocompletePredictions()) {
-                                            if (prediction.getFullText(null).toString().equals(addressLine)) {
+                                            if (prediction.getFullText(null).toString().equalsIgnoreCase(addressLine)) {
                                                 selectedPlaceId = prediction.getPlaceId();
+                                                Log.d("AddParcel", "Found matching placeId: " + selectedPlaceId);
                                                 break;
                                             }
                                         }
@@ -1068,7 +799,12 @@ public class HomeActivity extends AppCompatActivity {
                             Intent galleryIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
                             galleryLauncher.launch(galleryIntent);
                         } else {
-                            requestCameraPermission();
+                            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                                openCamera();
+                            } else {
+                                cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
+
+                            }
                         }
                     })
                     .show();
@@ -1078,175 +814,7 @@ public class HomeActivity extends AppCompatActivity {
             dialog.dismiss();
             showAddParcelStep4Dialog();
         });
-/**
-        addparcel.setOnClickListener(v -> {
-            ProgressDialog progressDialog = new ProgressDialog(this);
-            progressDialog.setMessage("Uploading...");
-            progressDialog.show();
-            int fallbackDrawableResId = R.drawable.photo_mixed;
 
-            if (selectedTags.size() > 1) {
-                fallbackDrawableResId = R.drawable.photo_mixed;
-            } else if (selectedTags.size() == 1) {
-                String tag = selectedTags.get(0).toLowerCase(Locale.ROOT);
-                switch (tag) {
-                    case "sweets": fallbackDrawableResId = R.drawable.photo_sweets; break;
-                    case "fast food": fallbackDrawableResId = R.drawable.photo_fastfood; break;
-                    case "bakery": fallbackDrawableResId = R.drawable.photo_bakery; break;
-                    case "dairy": fallbackDrawableResId = R.drawable.photo_dairy; break;
-                    case "vegetables": fallbackDrawableResId = R.drawable.photo_vegetables; break;
-                    case "vegetarian": fallbackDrawableResId = R.drawable.photo_vegetarian; break;
-                    case "vegan": fallbackDrawableResId = R.drawable.photo_vegan; break;
-                    case "fruits": fallbackDrawableResId = R.drawable.photo_fruits; break;
-                    case "liquids": fallbackDrawableResId = R.drawable.photo_liquids; break;
-                    case "meals": fallbackDrawableResId = R.drawable.photo_meal; break;
-                    case "meat": fallbackDrawableResId = R.drawable.photo_meat; break;
-                    default: fallbackDrawableResId = R.drawable.photo_mixed; break;
-                }
-            }
-
-            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            if (user == null) {
-                Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            String userId = user.getUid();
-            String imageFileName = "parcels/" + UUID.randomUUID() + ".jpg";
-            StorageReference imageRef = FirebaseStorage.getInstance().getReference().child(imageFileName);
-
-
-// 🔁 konwersja Drawable do byte[]
-
-Drawable drawable = ContextCompat.getDrawable(this, fallbackDrawableResId);
-Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
-ByteArrayOutputStream baos = new ByteArrayOutputStream();
-bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-byte[] imageBytes = baos.toByteArray();
-
-imageRef.putBytes(imageBytes)
-        .continueWithTask(task -> {
-            if (!task.isSuccessful()) {
-                Exception e = task.getException();
-                Log.e("upload", "Upload failed in continueWithTask: " + e.getMessage(), e);
-                throw e;
-            }
-            return imageRef.getDownloadUrl();
-        })
-        .addOnSuccessListener(downloadUri -> {
-            // Dodaj dane do Firestore
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-            Map<String, Object> parcelData = new HashMap<>();
-            parcelData.put("title", title);
-            parcelData.put("description", description);
-            parcelData.put("tags", selectedTags);
-            parcelData.put("startTime", startTime);
-            parcelData.put("endTime", endTime);
-            parcelData.put("day", selectedDay);
-            parcelData.put("address", selectedFullAddress);
-            parcelData.put("placeId", selectedPlaceId);
-            // parcelData.put("imageUrl", downloadUri.toString());
-            parcelData.put("userId", userId);
-            parcelData.put("phone", phoneNumber);
-            parcelData.put("timestamp", FieldValue.serverTimestamp());
-
-            db.collection("parcels")
-                    .add(parcelData)
-                    .addOnSuccessListener(documentReference -> {
-                        progressDialog.dismiss();
-                        Toast.makeText(this, "Parcel added!", Toast.LENGTH_SHORT).show();
-                        // Resetuj dane
-                        title = "";
-                        description = "";
-                        selectedTags.clear();
-                        startTime = "";
-                        endTime = "";
-                        selectedFullAddress = "";
-                        selectedPlaceId = "";
-                        addressToPlaceIdMap.clear();
-                        selectedParcelImageUri = null;
-                        phoneNumber = "";
-                        selectedDay = "today";
-                        dialog.dismiss();
-                    })
-                    .addOnFailureListener(e -> {
-                        progressDialog.dismiss();
-                        Toast.makeText(this, "Failed to save parcel: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
-        })
-        .addOnFailureListener(e -> {
-            progressDialog.dismiss();
-            Toast.makeText(this, "Image upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        });
-
-
-// 🟢 Zamiast uploadu zdjęcia — od razu zapisz dane bez pola imageUrl:
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-            Map<String, Object> parcelData = new HashMap<>();
-            String dateToSave;
-            Calendar calendar = Calendar.getInstance();
-
-            if ("tomorrow".equalsIgnoreCase(selectedDay)) {
-                calendar.add(Calendar.DAY_OF_YEAR, 1);
-            }
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            dateToSave = sdf.format(calendar.getTime());
-            parcelData.put("date", dateToSave);
-            parcelData.put("title", capitalizeFirstLetter(title.trim()));
-            parcelData.put("description", capitalizeFirstLetter(description.trim()));
-            parcelData.put("tags", selectedTags);
-            parcelData.put("startTime", startTime);
-            parcelData.put("endTime", endTime);
-            parcelData.put("address", selectedFullAddress);
-            parcelData.put("placeId", selectedPlaceId);
-            parcelData.put("imageUrl", downloadUri.toString()); // brak zdjęcia
-            parcelData.put("userId", userId);
-            parcelData.put("phone", phoneNumber);
-            parcelData.put("price", price);
-            parcelData.put("timestamp", FieldValue.serverTimestamp());
-            parcelData.put("status", "active");
-            parcelData.put("ownerconfirmed", "no");
-            parcelData.put("finished", false);
-            parcelData.put("lat", selectedLat);
-            parcelData.put("lng", selectedLng);
-
-
-            db.collection("parcels")
-                    .add(parcelData)
-                    .addOnSuccessListener(documentReference -> {
-                        progressDialog.dismiss();
-                        Toast.makeText(this, "Parcel added!", Toast.LENGTH_SHORT).show();
-                        String parcelId = documentReference.getId();
-
-                        db.collection("users").document(userId)
-                                .update("parcelIds", FieldValue.arrayUnion(parcelId))
-                                .addOnSuccessListener(aVoid -> Log.d("Firestore", "Parcel ID added to user"))
-                                .addOnFailureListener(e -> Log.e("Firestore", "Failed to update user: " + e.getMessage()));
-
-                        // Resetuj dane
-                        title = "";
-                        description = "";
-                        selectedTags.clear();
-                        startTime = "";
-                        endTime = "";
-                        selectedFullAddress = "";
-                        selectedPlaceId = "";
-                        addressToPlaceIdMap.clear();
-                        selectedParcelImageUri = null;
-                        phoneNumber = "";
-                        price = 0.0;
-                        selectedDay = "today";
-                        selectedLat = 0.0;
-                        selectedLng = 0.0;
-                        dialog.dismiss();
-
-                    })
-                    .addOnFailureListener(e -> {
-                        progressDialog.dismiss();
-                        Toast.makeText(this, "Failed to save parcel: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
-
-        });**/
 
         addparcel.setOnClickListener(v -> {
             ProgressDialog progressDialog = new ProgressDialog(this);
@@ -1443,6 +1011,15 @@ imageRef.putBytes(imageBytes)
             openCamera();
         }
     }
+
+    private ActivityResultLauncher<String> cameraPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    openCamera();
+                } else {
+                    Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
+                }
+            });
 
     private void openCamera() {
         ContentValues values = new ContentValues();

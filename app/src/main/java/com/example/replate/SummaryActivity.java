@@ -1,40 +1,30 @@
 package com.example.replate;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.google.firebase.functions.FirebaseFunctions;
-import com.google.firebase.functions.HttpsCallableResult;
 import java.util.HashMap;
 import java.util.Map;
 import android.content.Intent;
-import android.net.Uri;
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FieldValue;
-import android.content.Intent;
 import android.widget.Toast;
 import com.stripe.android.PaymentConfiguration;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
-import com.stripe.android.PaymentConfiguration;
 import com.stripe.android.paymentsheet.PaymentSheet;
 import com.stripe.android.paymentsheet.PaymentSheetResult;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
-import java.util.HashMap;
-import java.util.Map;
+
 
 public class SummaryActivity extends AppCompatActivity {
     private String selectedPaymentMethod = "cash";
@@ -156,7 +146,7 @@ public class SummaryActivity extends AppCompatActivity {
 
         reservebuybtn.setOnClickListener(v -> {
             if (price == 0.0) {
-                reserveParcel(); // Paczka darmowa – od razu rezerwujemy
+                reserveParcel();
             } else {
                 if (selectedPaymentMethod == null) {
                     Toast.makeText(this, "Please select a payment method", Toast.LENGTH_SHORT).show();
@@ -164,7 +154,7 @@ public class SummaryActivity extends AppCompatActivity {
                 }
 
                 if (selectedPaymentMethod.equals("cash")) {
-                    reserveParcel(); // Gotówka – też od razu rezerwujemy
+                    reserveParcel();
                 } else if (selectedPaymentMethod.equals("przelewy24")) {
                     createPaymentIntent();
                 }
@@ -177,7 +167,6 @@ public class SummaryActivity extends AppCompatActivity {
         View sheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_payment, null);
         bottomSheetDialog.setContentView(sheetView);
 
-        // Znajdź widoki z bottom_sheet_payment.xml
         LinearLayout transferLayout = sheetView.findViewById(R.id.transfer);
         LinearLayout cashLayout = sheetView.findViewById(R.id.cash);
 
@@ -225,7 +214,6 @@ public class SummaryActivity extends AppCompatActivity {
         } else if ("cash".equals(selectedPaymentMethod)) {
             paymentMethodToSave = "cash";
         } else {
-            // Rezerwacja dla innych metod płatności nieobsługiwana
             Toast.makeText(this, "Metoda płatności nieobsługiwana", Toast.LENGTH_SHORT).show();
             return;
         }

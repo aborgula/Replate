@@ -7,14 +7,6 @@ public class User {
     private String profileImageBase64;
     private Double rating;
 
-    public User(String uid, String username, String photoUrl, double rating) {
-        this.uid = uid;
-        this.username = username;
-        this.photoUrl = photoUrl;
-        this.rating = rating;
-    }
-
-    // Konstruktor z profileImageBase64
     public User(String uid, String username, String photoUrl, String profileImageBase64, double rating) {
         this.uid = uid;
         this.username = username;
@@ -23,10 +15,8 @@ public class User {
         this.rating = rating;
     }
 
-    // getters
     public String getUid() { return uid; }
     public String getUsername() { return username; }
-    public String getPhotoUrl() { return photoUrl; }
     public String getProfileImageBase64() { return profileImageBase64; }
     public Double getRating() { return rating; }
 

@@ -20,6 +20,7 @@
         android:maxSdkVersion="28" />
 
     <application
+        android:name=".MyApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -28,8 +29,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Replate"
-        tools:targetApi="31">
-        <activity
+        tools:targetApi="31"
+        android:forceDarkAllowed="false">
+
+    <activity
             android:name=".ReviewsActivity"
             android:exported="false" />
         <activity
