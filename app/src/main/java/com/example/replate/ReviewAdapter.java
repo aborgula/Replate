@@ -64,6 +64,9 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewView
 
         holder.reviewText.setText(review.getDescription());
         holder.reviewAuthorName.setText("- " + (review.getAuthorLogin() != null ? review.getAuthorLogin() : review.getUserId()));
+
+        holder.parcelTitle.setText(review.getParcelTitle() != null ? review.getParcelTitle() : "No title");
+
     }
 
     @Override
@@ -72,13 +75,14 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewView
     }
 
     public static class ReviewViewHolder extends RecyclerView.ViewHolder {
-        TextView reviewScoreCircle, reviewText, reviewAuthorName;
+        TextView reviewScoreCircle, reviewText, reviewAuthorName, parcelTitle;
 
         public ReviewViewHolder(@NonNull View itemView) {
             super(itemView);
             reviewScoreCircle = itemView.findViewById(R.id.reviewScoreCircle);
             reviewText = itemView.findViewById(R.id.reviewText);
             reviewAuthorName = itemView.findViewById(R.id.reviewAuthorName);
+            parcelTitle = itemView.findViewById(R.id.parcelTitle);
         }
     }
 }

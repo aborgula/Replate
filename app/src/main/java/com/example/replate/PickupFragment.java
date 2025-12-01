@@ -172,6 +172,8 @@ public class PickupFragment extends Fragment {
         Fragment currentFragment = requireActivity().getSupportFragmentManager().findFragmentById(R.id.listormap);
         if (currentFragment instanceof FragmentMap) {
             ((FragmentMap) currentFragment).reloadMarkers();
+        } else if (currentFragment instanceof FragmentList) {
+            ((FragmentList) currentFragment).loadFilteredParcels();
         }
     }
 
@@ -226,6 +228,7 @@ else {
         Fragment fragment = getChildFragmentManager().findFragmentById(R.id.map_fragment);
         if (fragment instanceof FragmentMap) {
             ((FragmentMap) fragment).reloadMarkers();
+            Log.d("ppp", "w tym instanceof");
         }
     }
 

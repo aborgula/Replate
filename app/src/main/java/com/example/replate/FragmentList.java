@@ -100,13 +100,15 @@ public class FragmentList extends Fragment {
     }
 
     public void loadFilteredParcels() {
+        SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        Set<String> selectedChipsSet = prefs.getStringSet("selectedChips", null);
+        currentSelectedChips = selectedChipsSet != null ? new ArrayList<>(selectedChipsSet) : new ArrayList<>();
         loadParcelsAndDisplay();
     }
 
     private void loadParcelsAndDisplay() {
         String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        String filterPlaceId = prefs.getString("lastPlaceId", null);
         int selectedDistanceKm = prefs.getInt("selected_distance_km", 0);
         Double filterLat = Double.longBitsToDouble(prefs.getLong("lastLat", Double.doubleToLongBits(0.0)));
         Double filterLng = Double.longBitsToDouble(prefs.getLong("lastLng", Double.doubleToLongBits(0.0)));
@@ -373,7 +375,6 @@ public class FragmentList extends Fragment {
                 ContextCompat.checkSelfPermission(requireContext(),
                         Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
-            // 👀 Jeśli użytkownik wcześniej odrzucił, pokaż dialog z wyjaśnieniem
             if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
                 new AlertDialog.Builder(requireContext())
                         .setTitle("Allow location access?")

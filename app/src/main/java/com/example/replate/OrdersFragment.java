@@ -369,6 +369,7 @@ public class OrdersFragment extends Fragment {
                     .addOnSuccessListener(parcelDoc -> {
                         if (parcelDoc.exists()) {
                             String authorId = parcelDoc.getString("userId"); // autor paczki
+                            String parcelTitle = parcelDoc.getString("title"); // tytuł paczki
 
                             if (authorId == null) {
                                 Toast.makeText(getContext(), "Parcel owner not found", Toast.LENGTH_SHORT).show();
@@ -379,11 +380,12 @@ public class OrdersFragment extends Fragment {
                             Map<String, Object> ratingData = new HashMap<>();
                             ratingData.put("authorId", authorId);
                             ratingData.put("userId", currentUserId);
+                            ratingData.put("parcelId", parcelId);
+                            ratingData.put("parcelTitle", parcelTitle);
                             ratingData.put("value", selectedRating[0]);
                             ratingData.put("description", descriptionText);
                             ratingData.put("timestamp", new Date());
 
-                            Log.d("RatingDialog", "Saving rating: " + ratingData.toString());
                             db.collection("ratings")
                                     .add(ratingData)
                                     .addOnSuccessListener(ref -> {

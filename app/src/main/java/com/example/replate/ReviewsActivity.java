@@ -37,7 +37,7 @@ public class ReviewsActivity extends AppCompatActivity {
 
         userId = getIntent().getStringExtra("userId");
         if (userId == null && currentUser != null) {
-            userId = currentUser.getUid(); // fallback
+            userId = currentUser.getUid();
         }
 
         if (userId == null) {
@@ -48,7 +48,6 @@ public class ReviewsActivity extends AppCompatActivity {
 
         adapter = new ReviewAdapter(reviewList);
         recyclerView.setAdapter(adapter);
-
         arrowBack.setOnClickListener(v -> finish());
 
         loadReviewsForUser(userId);
@@ -64,10 +63,14 @@ public class ReviewsActivity extends AppCompatActivity {
                         Long valueLong = doc.getLong("value");
                         String description = doc.getString("description");
                         String reviewUserId = doc.getString("userId");
+                        String parcelId = doc.getString("parcelId");
+                        String parcelTitle = doc.getString("parcelTitle"); // z dokumentu rating
 
                         int value = (valueLong != null) ? valueLong.intValue() : 0;
 
-                        Review review = new Review(value, description, reviewUserId, null);
+                        Review review = new Review(value, description, reviewUserId, null, parcelId, parcelTitle);
+                        review.setParcelId(parcelId);
+
                         reviewList.add(review);
                         // Pobranie loginu autora z users
                         db.collection("users").document(reviewUserId)
@@ -79,6 +82,8 @@ public class ReviewsActivity extends AppCompatActivity {
                                         adapter.notifyDataSetChanged();
                                     }
                                 });
+
+
                     }
                     adapter.notifyDataSetChanged();
                 })

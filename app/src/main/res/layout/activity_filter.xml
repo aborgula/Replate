@@ -182,7 +182,7 @@
                     android:layout_marginStart="12dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Fast foods"
+                    android:text="Fast food"
                     android:textSize="16dp"
                     android:textColor="#232323"/>
                 <Space
