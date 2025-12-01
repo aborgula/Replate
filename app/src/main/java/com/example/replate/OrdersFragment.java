@@ -285,10 +285,7 @@ public class OrdersFragment extends Fragment {
                             }
 
                             else if ("yes".equals(ownerConfirmed)) {
-                                // TODO: logika, gdy owner potwierdził
                                 Toast.makeText(getContext(), "Owner already confirmed this parcel", Toast.LENGTH_SHORT).show();
-
-
                                 showRatingDialog(parcelId);
                             }
                         }

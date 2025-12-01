@@ -1,4 +1,4 @@
-package com.example.replate;
+package com.example.replate.Model;
 
 public class User {
     private String uid;

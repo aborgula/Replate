@@ -1,5 +1,5 @@
 package com.example.replate;
-
+/**
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
@@ -22,6 +22,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
+import com.example.replate.Model.Parcel;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -480,6 +481,360 @@ private void fetchPlaceAndAddMarker(String placeId, String title, String parcelI
 
     public void reloadMarkers() {
         // Wczytaj selectedChips z prefs ponownie
+        SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        Set<String> selectedChipsSet = prefs.getStringSet("selectedChips", null);
+        currentSelectedChips = selectedChipsSet != null ? new ArrayList<>(selectedChipsSet) : new ArrayList<>();
+
+        if (googleMap != null) {
+            googleMap.clear();
+            loadParcelsAndShowMarkers();
+        }
+    }
+}
+**/
+import android.Manifest;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
+import com.example.replate.Model.Parcel;
+import com.example.replate.repository.ParcelRepository;
+import com.example.replate.repository.UserRepository;
+import com.example.replate.service.MapMarkerService;
+import com.example.replate.service.ParcelFilterService;
+import com.example.replate.service.PlacesService;
+import com.example.replate.util.DateTimeUtil;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.firebase.auth.FirebaseAuth;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
+public class FragmentMap extends Fragment implements OnMapReadyCallback {
+
+    private GoogleMap googleMap;
+    private FusedLocationProviderClient fusedLocationClient;
+    private PlacesClient placesClient;
+
+    // Services & Repositories
+    private ParcelRepository parcelRepository;
+    private UserRepository userRepository;
+    private PlacesService placesService;
+    private ParcelFilterService filterService;
+    private MapMarkerService markerService;
+
+    private List<String> currentSelectedChips = new ArrayList<>();
+    private View layoutEmptyMap;
+    private com.airbnb.lottie.LottieAnimationView emptyMapAnim;
+    private Map<String, Parcel> parcelsMap = new HashMap<>();
+
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+
+        parcelRepository = new ParcelRepository();
+        userRepository = new UserRepository();
+        filterService = new ParcelFilterService();
+
+        SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        Set<String> selectedChipsSet = prefs.getStringSet("selectedChips", null);
+        currentSelectedChips = selectedChipsSet != null ? new ArrayList<>(selectedChipsSet) : new ArrayList<>();
+
+        if (googleMap != null) {
+            googleMap.clear();
+        }
+        loadParcelsAndShowMarkers();
+        reloadMarkers();
+
+        return inflater.inflate(R.layout.fragment_map, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        if (!Places.isInitialized()) {
+            Places.initialize(requireContext(), "AIzaSyA7Mm6hV5yGvXd3sn8ZqM_z9nxcfxzc2y8");
+        }
+
+        placesClient = Places.createClient(requireContext());
+        placesService = new PlacesService(placesClient);
+
+        layoutEmptyMap = view.findViewById(R.id.layoutEmptyMap);
+        emptyMapAnim = view.findViewById(R.id.emptyMapAnim);
+
+        SupportMapFragment mapFragment = (SupportMapFragment)
+                getChildFragmentManager().findFragmentById(R.id.map_fragment);
+
+        if (mapFragment != null) {
+            mapFragment.getMapAsync(this);
+        }
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
+    }
+
+    @Override
+    public void onMapReady(@NonNull GoogleMap map) {
+        googleMap = map;
+        markerService = new MapMarkerService(requireContext(), googleMap);
+
+        setupMarkerClickListener();
+
+        if (!checkLocationPermissions()) {
+            requestLocationPermissions();
+            return;
+        }
+
+        moveToLastPlaceOrCurrentLocation();
+        loadParcelsAndShowMarkers();
+    }
+
+    private void setupMarkerClickListener() {
+        googleMap.setOnMarkerClickListener(marker -> {
+            String clickedParcelId = (String) marker.getTag();
+            if (clickedParcelId != null) {
+                Parcel parcel = parcelsMap.get(clickedParcelId);
+                if (parcel != null) {
+                    showParcelDialog(parcel, clickedParcelId);
+                }
+            }
+            return true;
+        });
+    }
+
+    private void showParcelDialog(Parcel parcel, String parcelId) {
+        androidx.appcompat.app.AlertDialog dialog =
+                new androidx.appcompat.app.AlertDialog.Builder(requireContext()).create();
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_parcel_summary, null);
+
+        TextView titleTv = dialogView.findViewById(R.id.dialogParcelTitle);
+        ImageView imageView = dialogView.findViewById(R.id.dialogParcelImage);
+        ImageView dialogRatingIcon = dialogView.findViewById(R.id.dialogRatingIcon);
+        TextView ratingText = dialogView.findViewById(R.id.dialogRatingText);
+        TextView dayText = dialogView.findViewById(R.id.dialogDay);
+        TextView timeText = dialogView.findViewById(R.id.dialogTimeText);
+        TextView priceTv = dialogView.findViewById(R.id.dialogParcelPrice);
+
+        titleTv.setText(parcel.getTitle());
+
+        // Wyświetlenie ceny
+        Double price = parcel.getPrice();
+        if (price == null || price == 0.0) {
+            priceTv.setText("Free");
+        } else {
+            priceTv.setText(price + " zł");
+        }
+
+        // Zaokrąglenie rogów zdjęcia
+        int radiusInPx = (int) (20 * getResources().getDisplayMetrics().density);
+        Glide.with(requireContext())
+                .load(parcel.getImageUrl())
+                .transform(new RoundedCorners(radiusInPx))
+                .into(imageView);
+
+        loadUserRating(parcel.getUserId(), dialogRatingIcon, ratingText);
+        dayText.setText(DateTimeUtil.formatDateForDisplay(parcel.getDate()));
+        timeText.setText(DateTimeUtil.formatTimeRange(parcel.getStartTime(), parcel.getEndTime()));
+
+        dialog.setView(dialogView);
+
+        dialogView.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), ParcelActivity.class);
+            intent.putExtra("parcelId", parcelId);
+            startActivity(intent);
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private void loadUserRating(String userId, ImageView ratingIcon, TextView ratingText) {
+        userRepository.getUserRating(userId, new UserRepository.OnUserRatingLoadedListener() {
+            @Override
+            public void onSuccess(Double rating) {
+                ratingText.setText(String.format(Locale.getDefault(), "%.1f", rating));
+                ratingIcon.setImageResource(R.drawable.star_full);
+            }
+
+            @Override
+            public void onNoRating() {
+                ratingText.setText("No ratings");
+                ratingIcon.setImageResource(R.drawable.no_review);
+                ratingIcon.setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                ratingText.setText("No ratings");
+            }
+        });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                onMapReady(googleMap);
+            } else {
+                Toast.makeText(requireContext(), "Permission denied. Unable to access location", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void loadParcelsAndShowMarkers() {
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        if (googleMap == null) {
+            Log.e("FragmentMap", "googleMap is null, cannot load parcels");
+            return;
+        }
+
+        SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        String selectedDate = prefs.getString("selectedDate", "");
+
+        if (selectedDate == null || selectedDate.isEmpty()) {
+            selectedDate = DateTimeUtil.getTodayDate();
+            prefs.edit().putString("selectedDate", selectedDate).apply();
+        }
+
+        int filterStart = prefs.getInt("startTimeMinutes", 0);
+        int filterEnd = prefs.getInt("endTimeMinutes", 1439);
+
+        ParcelFilterService.FilterCriteria criteria = new ParcelFilterService.FilterCriteria(
+                currentUserId, currentSelectedChips, selectedDate, filterStart, filterEnd
+        );
+
+        parcelRepository.getActiveParcels(new ParcelRepository.OnParcelsLoadedListener() {
+            @Override
+            public void onSuccess(List<Parcel> parcels) {
+                Log.d("FragmentMap", "Fetched " + parcels.size() + " parcels from Firestore");
+
+                List<Parcel> filteredParcels = filterService.filterParcels(parcels, criteria);
+                Log.d("FragmentMap", "Filtered to " + filteredParcels.size() + " parcels");
+
+                parcelsMap.clear();
+                for (Parcel parcel : filteredParcels) {
+                    parcelsMap.put(parcel.getId(), parcel);
+
+                    String placeId = parcel.getPlaceId();
+                    if (placeId != null && !placeId.isEmpty()) {
+                        fetchPlaceAndAddMarker(placeId, parcel.getTitle(),
+                                parcel.getId(), parcel.getImageUrl());
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Toast.makeText(requireContext(),
+                        "Failed to load parcels: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void fetchPlaceAndAddMarker(String placeId, String title, String parcelId, String imageUrl) {
+        placesService.fetchPlaceLatLng(placeId, new PlacesService.OnPlaceFetchedListener() {
+            @Override
+            public void onSuccess(LatLng latLng) {
+                markerService.addMarkerWithImage(latLng, title, parcelId, imageUrl);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Log.e("FragmentMap", "Failed to fetch place: " + e.getMessage());
+            }
+        });
+    }
+
+    private void moveToLastPlaceOrCurrentLocation() {
+        String lastPlaceId = requireContext()
+                .getSharedPreferences("MyPrefs", 0)
+                .getString("lastPlaceId", null);
+
+        if (lastPlaceId != null && !lastPlaceId.isEmpty()) {
+            placesService.fetchPlaceLatLng(lastPlaceId, new PlacesService.OnPlaceFetchedListener() {
+                @Override
+                public void onSuccess(LatLng latLng) {
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 12));
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    Log.e("FragmentMap", "Failed to fetch lastPlaceId: " + e.getMessage());
+                    fallbackToCurrentLocation();
+                }
+            });
+        } else {
+            fallbackToCurrentLocation();
+        }
+    }
+
+    private void fallbackToCurrentLocation() {
+        try {
+            fusedLocationClient.getLastLocation()
+                    .addOnSuccessListener(requireActivity(), location -> {
+                        if (location != null) {
+                            LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
+                            googleMap.addMarker(new MarkerOptions().position(currentLocation).title("Your Location"));
+                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 12));
+                        } else {
+                            Toast.makeText(requireContext(), "Unable to fetch location", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } catch (SecurityException e) {
+            Toast.makeText(requireContext(), "Location permission not granted", Toast.LENGTH_SHORT).show();
+            Log.e("FragmentMap", "SecurityException: " + e.getMessage());
+        }
+    }
+
+    private boolean checkLocationPermissions() {
+        return ActivityCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(requireContext(),
+                        Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestLocationPermissions() {
+        ActivityCompat.requestPermissions(requireActivity(),
+                new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION},
+                LOCATION_PERMISSION_REQUEST_CODE);
+    }
+
+    public void reloadMarkers() {
         SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         Set<String> selectedChipsSet = prefs.getStringSet("selectedChips", null);
         currentSelectedChips = selectedChipsSet != null ? new ArrayList<>(selectedChipsSet) : new ArrayList<>();

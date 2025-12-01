@@ -2,9 +2,6 @@ package com.example.replate;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.replate.Model.Parcel;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.ncorti.slidetoact.SlideToActView;
 
