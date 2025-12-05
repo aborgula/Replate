@@ -11,7 +11,8 @@ import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.example.replate.Model.Parcel;
+import com.example.replate.adapter.ParcelAdapter;
+import com.example.replate.model.Parcel;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;

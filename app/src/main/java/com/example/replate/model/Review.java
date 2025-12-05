@@ -1,4 +1,4 @@
-package com.example.replate.Model;
+package com.example.replate.model;
 
 public class Review {
     private int value;

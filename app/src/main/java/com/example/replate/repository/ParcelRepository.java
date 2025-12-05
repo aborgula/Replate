@@ -1,6 +1,6 @@
 package com.example.replate.repository;
 
-import com.example.replate.Model.Parcel;
+import com.example.replate.model.Parcel;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 

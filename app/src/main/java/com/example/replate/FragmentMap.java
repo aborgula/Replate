@@ -509,7 +509,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
-import com.example.replate.Model.Parcel;
+import com.example.replate.model.Parcel;
 import com.example.replate.repository.ParcelRepository;
 import com.example.replate.repository.UserRepository;
 import com.example.replate.service.MapMarkerService;

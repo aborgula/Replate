@@ -43,4 +43,28 @@ public class DateTimeUtil {
         java.util.Calendar calendar = java.util.Calendar.getInstance();
         return sdf.format(calendar.getTime());
     }
+
+    public static String validateAndFixDate(String storedDate) {
+        if (storedDate == null || storedDate.equals("Today")) {
+            return getTodayDate();
+        }
+
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+        String todayString = getTodayDate();
+
+        try {
+            java.util.Date selected = sdf.parse(storedDate);
+            java.util.Date today = sdf.parse(todayString);
+
+            if (selected != null && today != null && selected.before(today)) {
+                // Wybrana data jest wcześniejsza niż dziś → ustawiamy na dzisiaj
+                return todayString;
+            }
+        } catch (java.text.ParseException e) {
+            e.printStackTrace();
+            return todayString; // w razie błędu ustawiamy na dzisiaj
+        }
+
+        return storedDate;
+    }
 }

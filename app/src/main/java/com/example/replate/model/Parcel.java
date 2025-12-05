@@ -1,4 +1,4 @@
-package com.example.replate.Model;
+package com.example.replate.model;
 /**
 import android.util.Log;
 import com.google.firebase.firestore.PropertyName;
@@ -74,6 +74,8 @@ public class Parcel {
     private String endTime;
     private double price;
     private String placeId; // 🔹 dodane pole
+    private Double lat; // 🔹 szerokość geograficzna
+    private Double lng; // 🔹 długość geograficzna
 
     // Pusty konstruktor wymagany przez Firestore
     public Parcel() {}
@@ -92,6 +94,8 @@ public class Parcel {
     public String getEndTime() { return endTime; }
     public double getPrice() { return price; }
     public String getPlaceId() { return placeId; } // 🔹 getter
+    public Double getLat() { return lat; } // 🔹 getter
+    public Double getLng() { return lng; } // 🔹 getter
 
     // Settery
     public void setId(String id) { this.id = id; }
@@ -112,4 +116,6 @@ public class Parcel {
     public void setEndTime(String endTime) { this.endTime = endTime; }
     public void setPrice(double price) { this.price = price; }
     public void setPlaceId(String placeId) { this.placeId = placeId; } // 🔹 setter
+    public void setLat(Double lat) { this.lat = lat; } // 🔹 setter
+    public void setLng(Double lng) { this.lng = lng; } // 🔹 setter
 }

@@ -1,8 +1,7 @@
-package com.example.replate;
+package com.example.replate.adapter;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,7 +13,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.example.replate.Model.Parcel;
+import com.example.replate.R;
+import com.example.replate.model.Parcel;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.ncorti.slidetoact.SlideToActView;
 
@@ -69,21 +69,6 @@ public class ParcelAdapter extends RecyclerView.Adapter<ParcelAdapter.ParcelView
         Parcel parcel = parcelList.get(position);
         holder.title.setText(parcel.getTitle());
 
-        // Dekodowanie zdjęcia
-   /**     if (parcel.getImageBase64() != null && !parcel.getImageBase64().isEmpty()) {
-            try {
-                String base64 = parcel.getImageBase64();
-                if (base64.contains(",")) base64 = base64.substring(base64.indexOf(",") + 1);
-                byte[] decodedBytes = Base64.decode(base64, Base64.DEFAULT);
-                Bitmap bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
-                holder.image.setImageBitmap(bitmap);
-            } catch (Exception e) {
-                holder.image.setImageResource(R.drawable.photo_mixed);
-            }
-        } else {
-            holder.image.setImageResource(R.drawable.photo_mixed);
-        }**/
-   Log.d("www","getimageurl " + parcel.getImageUrl());
         if (parcel.getImageUrl() != null && !parcel.getImageUrl().isEmpty()) {
             Glide.with(context)
                     .load(parcel.getImageUrl())

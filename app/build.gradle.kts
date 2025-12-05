@@ -100,4 +100,5 @@ dependencies {
         implementation("com.google.android.gms:play-services-base:18.3.0")
         implementation("com.google.android.gms:play-services-tasks:18.1.0")
 
+        testImplementation("junit:junit:4.13.2")
 }

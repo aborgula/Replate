@@ -1,5 +1,5 @@
 package com.example.replate;
-
+/**
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -424,4 +424,367 @@ public class FragmentList extends Fragment {
         }
     }
 
+}
+**/
+
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.Manifest;
+import android.content.pm.PackageManager;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
+import com.airbnb.lottie.LottieAnimationView;
+import com.example.replate.model.Parcel;
+import com.example.replate.repository.ParcelRepository;
+import com.example.replate.repository.UserRepository;
+import com.example.replate.service.FavoriteService;
+import com.example.replate.service.ParcelFilterService;
+import com.example.replate.service.ParcelImageService;
+import com.example.replate.util.DateTimeUtil;
+import com.google.firebase.auth.FirebaseAuth;
+
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+public class FragmentList extends Fragment {
+
+    // Services & Repositories
+    private ParcelRepository parcelRepository;
+    private UserRepository userRepository;
+    private ParcelFilterService filterService;
+    private ParcelImageService imageService;
+    private FavoriteService favoriteService;
+
+    private List<String> currentSelectedChips = new ArrayList<>();
+    private LinearLayout parcelContainer;
+    private LayoutInflater layoutInflater;
+    private ScrollView scrollView;
+    private LinearLayout layoutEmptyParcels;
+    private LottieAnimationView emptyParcelsAnim;
+
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
+
+    // Launcher przekazywany z PickupFragment
+    private androidx.activity.result.ActivityResultLauncher<Intent> parcelLauncher;
+
+    public void setParcelLauncher(androidx.activity.result.ActivityResultLauncher<Intent> launcher) {
+        this.parcelLauncher = launcher;
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_list, container, false);
+
+        // Inicjalizacja serwisów i repozytoriów
+        parcelRepository = new ParcelRepository();
+        userRepository = new UserRepository();
+        filterService = new ParcelFilterService();
+        imageService = new ParcelImageService(requireContext());
+        favoriteService = new FavoriteService();
+
+        parcelContainer = view.findViewById(R.id.parcelContainer);
+        layoutInflater = inflater;
+
+        scrollView = view.findViewById(R.id.scrollView);
+        layoutEmptyParcels = view.findViewById(R.id.layoutEmptyParcels);
+        emptyParcelsAnim = view.findViewById(R.id.emptyParcelsAnim);
+
+        checkLocationPermission();
+
+        SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        Set<String> selectedChipsSet = prefs.getStringSet("selectedChips", null);
+        currentSelectedChips = selectedChipsSet != null ? new ArrayList<>(selectedChipsSet) : new ArrayList<>();
+
+        loadParcelsAndDisplay();
+        return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        Set<String> selectedChipsSet = prefs.getStringSet("selectedChips", null);
+        currentSelectedChips = selectedChipsSet != null ? new ArrayList<>(selectedChipsSet) : new ArrayList<>();
+
+        loadParcelsAndDisplay();
+    }
+
+    public void loadFilteredParcels() {
+        SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        Set<String> selectedChipsSet = prefs.getStringSet("selectedChips", null);
+        currentSelectedChips = selectedChipsSet != null ? new ArrayList<>(selectedChipsSet) : new ArrayList<>();
+        loadParcelsAndDisplay();
+    }
+
+    private void loadParcelsAndDisplay() {
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        SharedPreferences prefs = requireContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+
+        int selectedDistanceKm = prefs.getInt("selected_distance_km", 0);
+        Double filterLat = Double.longBitsToDouble(prefs.getLong("lastLat", Double.doubleToLongBits(0.0)));
+        Double filterLng = Double.longBitsToDouble(prefs.getLong("lastLng", Double.doubleToLongBits(0.0)));
+
+        String storedDate = prefs.getString("selectedDate", "Today");
+        String selectedDate = DateTimeUtil.validateAndFixDate(storedDate);
+
+        // Zapisz poprawioną datę
+        if (!selectedDate.equals(storedDate)) {
+            prefs.edit().putString("selectedDate", selectedDate).apply();
+        }
+
+        int filterStart = prefs.getInt("startTimeMinutes", 0);
+        int filterEnd = prefs.getInt("endTimeMinutes", 1439);
+
+        ParcelFilterService.FilterCriteria criteria = new ParcelFilterService.FilterCriteria(
+                currentUserId, currentSelectedChips, selectedDate,
+                filterStart, filterEnd, selectedDistanceKm, filterLat, filterLng
+        );
+
+        // Najpierw pobierz ulubione użytkowników
+        userRepository.getLikedUsers(currentUserId, new UserRepository.OnLikedUsersLoadedListener() {
+            @Override
+            public void onSuccess(List<String> likedUsers) {
+                loadParcelsWithLikedUsers(criteria, likedUsers, prefs);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                loadParcelsWithLikedUsers(criteria, new ArrayList<>(), prefs);
+            }
+        });
+    }
+
+    private void loadParcelsWithLikedUsers(ParcelFilterService.FilterCriteria criteria,
+                                           List<String> likedUsers,
+                                           SharedPreferences prefs) {
+        parcelRepository.getActiveParcels(new ParcelRepository.OnParcelsLoadedListener() {
+            @Override
+            public void onSuccess(List<Parcel> parcels) {
+                List<Parcel> filteredParcels = filterService.filterParcels(parcels, criteria);
+                displayParcels(filteredParcels, likedUsers, prefs);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Toast.makeText(requireContext(),
+                        "Load failed: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void displayParcels(List<Parcel> parcels, List<String> likedUsers, SharedPreferences prefs) {
+        parcelContainer.removeAllViews();
+
+        if (parcels.isEmpty()) {
+            showEmptyState();
+            return;
+        }
+
+        for (Parcel parcel : parcels) {
+            View parcelView = createParcelView(parcel, likedUsers, prefs);
+            parcelContainer.addView(parcelView);
+        }
+
+        showParcelsList();
+    }
+
+    private View createParcelView(Parcel parcel, List<String> likedUsers, SharedPreferences prefs) {
+        View parcelView = layoutInflater.inflate(R.layout.layout_package_list, parcelContainer, false);
+
+        TextView title = parcelView.findViewById(R.id.parcelTitle);
+        TextView time = parcelView.findViewById(R.id.parcelTime);
+        TextView price = parcelView.findViewById(R.id.price);
+        TextView rating = parcelView.findViewById(R.id.rating);
+        ImageView image = parcelView.findViewById(R.id.parcelImage);
+        ImageButton favoriteButton = parcelView.findViewById(R.id.favoriteButton);
+
+        // Ustaw dane paczki
+        title.setText(parcel.getTitle());
+
+        // Cena
+        if (parcel.getPrice() > 0) {
+            price.setText(String.format("%.2f zł", parcel.getPrice()));
+        } else {
+            price.setText("Free");
+        }
+
+        // Czas
+        String whenText = prefs.getString("when", "Today");
+        time.setText(whenText + ", " + parcel.getStartTime() + " - " + parcel.getEndTime());
+
+        // Obraz
+        imageService.loadParcelImage(image, parcel.getImageUrl(), parcel.getTags());
+
+        // Rating użytkownika
+        loadUserRating(parcel.getUserId(), rating);
+
+        // Obsługa kliknięcia paczki
+        setupParcelClickListener(parcelView, parcel.getId());
+
+        // Obsługa serduszka (ulubione)
+        setupFavoriteButton(favoriteButton, parcel.getUserId(), likedUsers);
+
+        return parcelView;
+    }
+
+    private void loadUserRating(String userId, TextView ratingTextView) {
+        userRepository.getUserRating(userId, new UserRepository.OnUserRatingLoadedListener() {
+            @Override
+            public void onSuccess(Double userRating) {
+                ratingTextView.setText(String.format(Locale.US, "%.1f", userRating));
+            }
+
+            @Override
+            public void onNoRating() {
+                ratingTextView.setText("No ratings");
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                ratingTextView.setText("No ratings");
+            }
+        });
+    }
+
+    private void setupParcelClickListener(View parcelView, String parcelId) {
+        parcelView.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), ParcelActivity.class);
+            intent.putExtra("parcelId", parcelId);
+            if (parcelLauncher != null) {
+                parcelLauncher.launch(intent);
+            } else {
+                startActivity(intent);
+            }
+        });
+    }
+
+    private void setupFavoriteButton(ImageButton favoriteButton, String creatorId, List<String> likedUsers) {
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        AtomicBoolean isLiked = new AtomicBoolean(likedUsers.contains(creatorId));
+
+        updateFavoriteButtonUI(favoriteButton, isLiked.get());
+
+        favoriteButton.setOnClickListener(v -> {
+            favoriteService.toggleFavorite(currentUserId, creatorId, isLiked.get(),
+                    new FavoriteService.OnFavoriteToggleListener() {
+                        @Override
+                        public void onSuccess(boolean isNowLiked) {
+                            isLiked.set(isNowLiked);
+                            updateFavoriteButtonUI(favoriteButton, isNowLiked);
+
+                            String message = isNowLiked ? "Added to favorites" : "Removed from favorites";
+                            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            Toast.makeText(requireContext(),
+                                    "Failed to update favorites",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        });
+    }
+
+    private void updateFavoriteButtonUI(ImageButton button, boolean isLiked) {
+        if (isLiked) {
+            button.setImageResource(R.drawable.ic_favouritefull);
+            button.setColorFilter(Color.parseColor("#F40F0F"));
+        } else {
+            button.setImageResource(R.drawable.ic_favourite);
+            button.setColorFilter(Color.parseColor("#F8F8F8"));
+        }
+    }
+
+    private void showEmptyState() {
+        Log.d("FilterDebug", "❌ Nie znaleziono paczek po filtrach");
+        scrollView.setVisibility(View.GONE);
+        layoutEmptyParcels.setVisibility(View.VISIBLE);
+        emptyParcelsAnim.playAnimation();
+    }
+
+    private void showParcelsList() {
+        Log.d("FilterDebug", "✅ Są paczki do wyświetlenia");
+        scrollView.setVisibility(View.VISIBLE);
+        layoutEmptyParcels.setVisibility(View.GONE);
+        emptyParcelsAnim.cancelAnimation();
+    }
+
+    private void checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(requireContext(),
+                        Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Allow location access?")
+                        .setMessage("Replate needs your location to show nearby food parcels and offers around you.")
+                        .setPositiveButton("Allow", (dialog, which) -> {
+                            requestPermissions(
+                                    new String[]{
+                                            Manifest.permission.ACCESS_FINE_LOCATION,
+                                            Manifest.permission.ACCESS_COARSE_LOCATION
+                                    },
+                                    LOCATION_PERMISSION_REQUEST_CODE
+                            );
+                        })
+                        .setNegativeButton("No thanks", (dialog, which) -> {
+                            Toast.makeText(requireContext(),
+                                    "Location permission denied — only general parcels will be shown.",
+                                    Toast.LENGTH_LONG).show();
+                        })
+                        .show();
+            } else {
+                requestPermissions(
+                        new String[]{
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                        },
+                        LOCATION_PERMISSION_REQUEST_CODE
+                );
+            }
+        } else {
+            Log.d("PermissionCheck", "✅ Location permission already granted");
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(requireContext(), "Location access granted ✅", Toast.LENGTH_SHORT).show();
+                loadParcelsAndDisplay();
+            } else {
+                Toast.makeText(requireContext(), "Location access denied ❌", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
 }

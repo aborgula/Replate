@@ -1,4 +1,4 @@
-package com.example.replate;
+package com.example.replate.adapter;
 
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -10,8 +10,8 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.replate.Model.Review;
-
+import com.example.replate.R;
+import com.example.replate.model.Review;
 import java.util.List;
 
 public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder> {
@@ -35,7 +35,6 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewView
         Review review = reviewList.get(position);
         holder.reviewScoreCircle.setText(String.valueOf(review.getValue()));
 
-        // Dynamiczne ustawienie koloru w zależności od wartości
         switch (review.getValue()) {
             case 1:
                 holder.reviewScoreCircle.setBackgroundTintList(

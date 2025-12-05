@@ -1,4 +1,4 @@
-package com.example.replate;
+package com.example.replate.adapter;
 
 import android.content.Context;
 import android.util.Base64;
@@ -8,13 +8,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.bumptech.glide.Glide;
-import com.example.replate.Model.User;
-
+import com.example.replate.R;
+import com.example.replate.model.User;
 import java.util.List;
 
 public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.ViewHolder> {
@@ -83,7 +81,6 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.Vi
             holder.ratingView.setText(String.format("%.1f", rating));
         }
 
-        // Załaduj zdjęcie z Base64
         loadUserImage(holder.imageView, user.getProfileImageBase64());
     }
 
@@ -107,14 +104,10 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.Vi
                 base64String = profileImageBase64.split(",")[1];
             }
 
-            Log.d(TAG, "loadUserImage: Decoding base64 string (length: " + base64String.length() + ")");
-
-            // Dekoduj Base64 do byte array
             byte[] decodedBytes = Base64.decode(base64String, Base64.DEFAULT);
 
-            Log.d(TAG, "loadUserImage: Decoded bytes length: " + decodedBytes.length);
 
-            // Użyj Glide do załadowania obrazu z byte array
+            //  Glide do załadowania obrazu z byte array
             Glide.with(context)
                     .load(decodedBytes)
                     .placeholder(R.drawable.photo_defaultprofile)

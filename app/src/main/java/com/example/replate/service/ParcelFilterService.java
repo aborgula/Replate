@@ -1,7 +1,6 @@
 package com.example.replate.service;
 
-import com.example.replate.Model.Parcel;
-
+import com.example.replate.model.Parcel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +12,9 @@ public class ParcelFilterService {
         public String selectedDate;
         public int startTimeMinutes;
         public int endTimeMinutes;
+        public int selectedDistanceKm;
+        public Double filterLat;
+        public Double filterLng;
 
         public FilterCriteria(String currentUserId, List<String> selectedChips,
                               String selectedDate, int startTimeMinutes, int endTimeMinutes) {
@@ -21,6 +23,22 @@ public class ParcelFilterService {
             this.selectedDate = selectedDate;
             this.startTimeMinutes = startTimeMinutes;
             this.endTimeMinutes = endTimeMinutes;
+            this.selectedDistanceKm = 0;
+            this.filterLat = 0.0;
+            this.filterLng = 0.0;
+        }
+
+        public FilterCriteria(String currentUserId, List<String> selectedChips,
+                              String selectedDate, int startTimeMinutes, int endTimeMinutes,
+                              int selectedDistanceKm, Double filterLat, Double filterLng) {
+            this.currentUserId = currentUserId;
+            this.selectedChips = selectedChips != null ? selectedChips : new ArrayList<>();
+            this.selectedDate = selectedDate;
+            this.startTimeMinutes = startTimeMinutes;
+            this.endTimeMinutes = endTimeMinutes;
+            this.selectedDistanceKm = selectedDistanceKm;
+            this.filterLat = filterLat;
+            this.filterLng = filterLng;
         }
     }
 
@@ -37,18 +55,22 @@ public class ParcelFilterService {
     }
 
     private boolean shouldShowParcel(Parcel parcel, FilterCriteria criteria) {
+        // Pomijamy paczki użytkownika
         if (parcel.getUserId() != null && parcel.getUserId().equals(criteria.currentUserId)) {
             return false;
         }
 
+        // Filtrowanie po chipach
         if (!passesChipFilter(parcel, criteria.selectedChips)) {
             return false;
         }
 
+        // Filtrowanie po dacie
         if (!passesDateFilter(parcel, criteria.selectedDate)) {
             return false;
         }
 
+        // Filtrowanie po czasie
         if (!passesTimeFilter(parcel, criteria.startTimeMinutes, criteria.endTimeMinutes)) {
             return false;
         }
@@ -57,6 +79,7 @@ public class ParcelFilterService {
     }
 
     private boolean passesChipFilter(Parcel parcel, List<String> selectedChips) {
+        // Jeśli nie ma filtrów, pokaż wszystko
         if (selectedChips == null || selectedChips.isEmpty()) {
             return true;
         }
@@ -66,6 +89,7 @@ public class ParcelFilterService {
             return false;
         }
 
+        // Sprawdź czy któryś tag pasuje
         for (String tag : tags) {
             if (selectedChips.contains(tag)) {
                 return true;
@@ -100,6 +124,7 @@ public class ParcelFilterService {
         int parcelStartMin = timeStringToMinutes(parcelStartStr);
         int parcelEndMin = timeStringToMinutes(parcelEndStr);
 
+        // Paczka jest poza zakresem jeśli kończy się przed filtrem lub zaczyna po filtrze
         return !(parcelEndMin < filterStart || parcelStartMin > filterEnd);
     }
 
