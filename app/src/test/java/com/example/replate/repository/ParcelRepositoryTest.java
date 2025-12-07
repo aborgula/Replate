@@ -17,9 +17,10 @@ public class ParcelRepositoryTest {
 
     @Test
     public void getActiveParcels_Success_ReturnsList() {
+
+        // Arrange
         MockitoAnnotations.openMocks(this);
 
-        // Mocki Firebase
         FirebaseFirestore db = mock(FirebaseFirestore.class);
         CollectionReference col = mock(CollectionReference.class);
         Query query = mock(Query.class);
@@ -30,7 +31,6 @@ public class ParcelRepositoryTest {
         when(col.whereEqualTo("status", "active")).thenReturn(query);
         when(query.get()).thenReturn(task);
 
-        // Dokumenty
         QueryDocumentSnapshot d1 = mock(QueryDocumentSnapshot.class);
         QueryDocumentSnapshot d2 = mock(QueryDocumentSnapshot.class);
 
@@ -44,25 +44,24 @@ public class ParcelRepositoryTest {
 
         when(snapshot.iterator()).thenReturn(Arrays.asList(d1, d2).iterator());
 
-        // Przechwytujemy listener sukcesu
         ArgumentCaptor<OnSuccessListener<QuerySnapshot>> captor =
                 ArgumentCaptor.forClass(OnSuccessListener.class);
 
         when(task.addOnSuccessListener(captor.capture())).thenReturn(task);
         when(task.addOnFailureListener(any())).thenReturn(task);
 
-        // Testowany listener
         ParcelRepository.OnParcelsLoadedListener listener =
                 mock(ParcelRepository.OnParcelsLoadedListener.class);
 
-        // Testowany obiekt
         ParcelRepository repo = new ParcelRepository(db);
-        repo.getActiveParcels(listener);
 
-        // Symulujemy sukces Firebase
+
+        // Act
+        repo.getActiveParcels(listener);
         captor.getValue().onSuccess(snapshot);
 
-        // Sprawdzamy wynik
+
+        // Assert
         ArgumentCaptor<List<Parcel>> parcels = ArgumentCaptor.forClass(List.class);
         verify(listener).onSuccess(parcels.capture());
 
