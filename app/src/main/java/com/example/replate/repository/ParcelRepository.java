@@ -20,6 +20,10 @@ public class ParcelRepository {
         void onFailure(Exception e);
     }
 
+    ParcelRepository(FirebaseFirestore firestore) {
+        this.db = firestore;
+    }
+
     public void getActiveParcels(OnParcelsLoadedListener listener) {
         db.collection("parcels")
                 .whereEqualTo("status", "active")

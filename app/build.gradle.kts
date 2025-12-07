@@ -48,57 +48,77 @@ android {
 }
 
 dependencies {
-        annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
-        implementation("com.github.bumptech.glide:glide:4.16.0")
-        implementation("com.airbnb.android:lottie:6.6.6")
-        implementation("com.google.android.flexbox:flexbox:3.0.0")
-        implementation("com.ncorti:slidetoact:0.11.0")
-        implementation("com.squareup.okhttp3:okhttp:4.12.0")
-        implementation("com.google.firebase:firebase-storage:20.3.0")
-        implementation("com.google.firebase:firebase-auth:22.3.0")
-        implementation("com.google.firebase:firebase-firestore:25.1.0")
-        implementation("com.google.android.libraries.places:places:3.4.0")
-        implementation("com.google.android.gms:play-services-auth:20.7.0")
-        implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
-        implementation("com.google.firebase:firebase-auth")
-        implementation("com.google.firebase:firebase-analytics")
-        implementation("com.google.android.gms:play-services-location:18.0.0")
-        implementation("com.google.android.gms:play-services-maps:18.0.0")
-        implementation("de.hdodenhof:circleimageview:3.1.0")
-        implementation("androidx.appcompat:appcompat:1.7.0")
-        implementation("com.google.android.material:material:1.12.0")
-        implementation("com.google.firebase:firebase-appcheck-playintegrity:17.1.1")
-        implementation("androidx.constraintlayout:constraintlayout:2.2.1")
-        implementation("androidx.navigation:navigation-fragment:2.8.4")
-        implementation("androidx.navigation:navigation-ui:2.8.4")
-        implementation("androidx.activity:activity:1.10.1")
-        implementation("com.google.firebase:firebase-messaging:23.4.1")
-        implementation("com.google.firebase:firebase-storage")
-        implementation("com.google.firebase:firebase-auth:22.1.0")
-        implementation("com.google.firebase:firebase-bom:33.13.0")
-        implementation("com.google.firebase:firebase-functions")
-        androidTestImplementation("androidx.test.ext:junit:1.2.1")
-        androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
 
-        // Stripe
-        implementation("com.stripe:stripe-android:20.50.0")
+    // Glide
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
 
-        // Dodaj te nowe zależności dla Stripe:
-        implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
-        implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
-        implementation("androidx.lifecycle:lifecycle-process:2.6.2")
-        implementation("androidx.startup:startup-runtime:1.1.1")
+    // Lottie
+    implementation("com.airbnb.android:lottie:6.6.6")
 
-        implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.10")
-        implementation("androidx.compose.ui:ui:1.5.4")
-        implementation("androidx.compose.material:material:1.5.4")
-        implementation("androidx.compose.ui:ui-tooling-preview:1.5.4")
-        implementation("androidx.compose.runtime:runtime:1.5.4")
-        implementation("androidx.activity:activity-compose:1.8.2")
+    // Flexbox
+    implementation("com.google.android.flexbox:flexbox:3.0.0")
 
-        // Google Play Services (zaktualizowane wersje)
-        implementation("com.google.android.gms:play-services-base:18.3.0")
-        implementation("com.google.android.gms:play-services-tasks:18.1.0")
+    // SlideToAct
+    implementation("com.ncorti:slidetoact:0.11.0")
 
-        testImplementation("junit:junit:4.13.2")
+    // OkHttp
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Firebase (TYLKO 1 BOM!)
+    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-storage")
+    implementation("com.google.firebase:firebase-messaging")
+    implementation("com.google.firebase:firebase-functions")
+    implementation("com.google.firebase:firebase-appcheck-playintegrity")
+
+    // Google
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation("com.google.android.gms:play-services-location:18.0.0")
+    implementation("com.google.android.gms:play-services-maps:18.0.0")
+    implementation("com.google.android.gms:play-services-base:18.3.0")
+    implementation("com.google.android.gms:play-services-tasks:18.1.0")
+    implementation("com.google.android.libraries.places:places:3.4.0")
+
+    // AndroidX
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.2.1")
+    implementation("androidx.navigation:navigation-fragment:2.8.4")
+    implementation("androidx.navigation:navigation-ui:2.8.4")
+    implementation("androidx.activity:activity:1.10.1")
+
+    // CircleImageView
+    implementation("de.hdodenhof:circleimageview:3.1.0")
+
+    // Stripe
+    implementation("com.stripe:stripe-android:20.50.0")
+
+    // Lifecycle (dla Stripe)
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-process:2.6.2")
+    implementation("androidx.startup:startup-runtime:1.1.1")
+
+    // Kotlin
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.10")
+
+    // Compose
+    implementation("androidx.compose.ui:ui:1.5.4")
+    implementation("androidx.compose.material:material:1.5.4")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.5.4")
+    implementation("androidx.compose.runtime:runtime:1.5.4")
+    implementation("androidx.activity:activity-compose:1.8.2")
+
+    // TESTY
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.mockito:mockito-core:5.3.1")
+    testImplementation("org.mockito:mockito-inline:5.2.0")
+
 }

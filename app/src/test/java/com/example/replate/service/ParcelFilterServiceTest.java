@@ -27,7 +27,7 @@ public class ParcelFilterServiceTest {
 
         parcel2 = new Parcel();
         parcel2.setUserId("user2");
-        parcel2.setTags(Arrays.asList("bread"));
+        parcel2.setTags(Arrays.asList("bakery"));
         parcel2.setDate("2025-12-05");
         parcel2.setStartTime("11:00");
         parcel2.setEndTime("13:00");
@@ -52,7 +52,7 @@ public class ParcelFilterServiceTest {
     public void testFilterByChips() {
         // Arrange
         ParcelFilterService.FilterCriteria criteria = new ParcelFilterService.FilterCriteria(
-                "someone", Arrays.asList("bread"), "2025-12-05", 0, 1440
+                "someone", Arrays.asList("bakery"), "2025-12-05", 0, 1440
         );
 
         // Act
@@ -60,7 +60,7 @@ public class ParcelFilterServiceTest {
 
         // Assert
         assertEquals(1, filtered.size());
-        assertTrue(filtered.get(0).getTags().contains("bread"));
+        assertTrue(filtered.get(0).getTags().contains("bakeryprzefiltrow"));
     }
 
     @Test
