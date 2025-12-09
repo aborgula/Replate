@@ -51,6 +51,7 @@ dependencies {
 
     // Glide
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation("androidx.test:core:1.7.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
 
     // Lottie
@@ -120,5 +121,8 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.3.1")
     testImplementation("org.mockito:mockito-inline:5.2.0")
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    testImplementation("com.google.firebase:firebase-firestore:24.10.0")
+
 
 }

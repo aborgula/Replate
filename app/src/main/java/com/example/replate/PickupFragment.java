@@ -216,7 +216,7 @@ public class PickupFragment extends Fragment {
                             chosenLocation.setText("Unknown location");
                         }
                     }
-else {
+                    else {
                         chosenLocation.setText("Unable to fetch location.");
                     }
                 });
