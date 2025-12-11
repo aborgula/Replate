@@ -92,6 +92,65 @@ public class EmailRegistrationIntegrationTest {
     @Test
     public void testSuccessfulEmailRegistration_AuthAndRepositoryIntegration()
             throws InterruptedException {
+
+        when(mockAuthResult.getUser()).thenReturn(mockUser);
+        when(mockUser.getUid()).thenReturn(TEST_USER_ID);
+
+        CountDownLatch latch = new CountDownLatch(1);
+
+        // Mock Auth success
+        doAnswer(invocation -> {
+            OnCompleteListener<AuthResult> listener = invocation.getArgument(0);
+            when(mockAuthTask.isSuccessful()).thenReturn(true);
+            when(mockAuthTask.getResult()).thenReturn(mockAuthResult);
+            listener.onComplete(mockAuthTask);
+            return mockAuthTask;
+        }).when(mockAuthTask).addOnCompleteListener(any());
+
+        // Mock Firestore success
+        doAnswer(invocation -> {
+            OnSuccessListener<Void> listener = invocation.getArgument(0);
+            listener.onSuccess(null);
+            return mockFirestoreTask;
+        }).when(mockFirestoreTask).addOnSuccessListener(any());
+
+        // Act
+        authService.registerWithEmail(TEST_EMAIL, TEST_PASSWORD,
+                userId -> userRepository.createUser(userId, TEST_LOGIN, TEST_EMAIL,
+                        new UserRepository.UserCreationCallback() {
+                            @Override
+                            public void onSuccess() {
+                                latch.countDown();
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                latch.countDown();
+                            }
+                        }),
+                e -> latch.countDown()
+        );
+
+        // Assert
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+
+        verify(mockAuth).createUserWithEmailAndPassword(TEST_EMAIL, TEST_PASSWORD);
+        verify(mockFcmTokenService).getToken(any());
+
+        ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
+        verify(mockUserDocument).set(captor.capture());
+
+        Map<String, Object> data = captor.getValue();
+        assertEquals(TEST_LOGIN, data.get("login"));
+        assertEquals(TEST_EMAIL, data.get("email"));
+        assertEquals(TEST_FCM_TOKEN, data.get("fcmToken"));
+        assertNotNull(data.get("likedUsers"));
+    }
+
+
+    @Test
+    public void testSuccessfulEmailRegistration_AuthAndRepositoryIntegration()
+            throws InterruptedException {
         // Arrange
         when(mockAuthResult.getUser()).thenReturn(mockUser);
         when(mockUser.getUid()).thenReturn(TEST_USER_ID);
