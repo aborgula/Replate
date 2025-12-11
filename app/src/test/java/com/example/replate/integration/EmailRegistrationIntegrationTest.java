@@ -93,10 +93,11 @@ public class EmailRegistrationIntegrationTest {
     public void testSuccessfulEmailRegistration_AuthAndRepositoryIntegration()
             throws InterruptedException {
 
+
         when(mockAuthResult.getUser()).thenReturn(mockUser);
         when(mockUser.getUid()).thenReturn(TEST_USER_ID);
-
         CountDownLatch latch = new CountDownLatch(1);
+
 
         // Mock Auth success
         doAnswer(invocation -> {
@@ -107,12 +108,14 @@ public class EmailRegistrationIntegrationTest {
             return mockAuthTask;
         }).when(mockAuthTask).addOnCompleteListener(any());
 
+
         // Mock Firestore success
         doAnswer(invocation -> {
             OnSuccessListener<Void> listener = invocation.getArgument(0);
             listener.onSuccess(null);
             return mockFirestoreTask;
         }).when(mockFirestoreTask).addOnSuccessListener(any());
+
 
         // Act
         authService.registerWithEmail(TEST_EMAIL, TEST_PASSWORD,
@@ -123,6 +126,7 @@ public class EmailRegistrationIntegrationTest {
                                 latch.countDown();
                             }
 
+
                             @Override
                             public void onFailure(Exception e) {
                                 latch.countDown();
@@ -131,21 +135,24 @@ public class EmailRegistrationIntegrationTest {
                 e -> latch.countDown()
         );
 
+
         // Assert
         assertTrue(latch.await(5, TimeUnit.SECONDS));
+
 
         verify(mockAuth).createUserWithEmailAndPassword(TEST_EMAIL, TEST_PASSWORD);
         verify(mockFcmTokenService).getToken(any());
 
+
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
         verify(mockUserDocument).set(captor.capture());
+
 
         Map<String, Object> data = captor.getValue();
         assertEquals(TEST_LOGIN, data.get("login"));
         assertEquals(TEST_EMAIL, data.get("email"));
         assertEquals(TEST_FCM_TOKEN, data.get("fcmToken"));
-        assertNotNull(data.get("likedUsers"));
-    }
+        assertNotNull(data.get("likedUsers"));}
 
 
     @Test
