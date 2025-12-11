@@ -1,5 +1,6 @@
 package com.example.replate.repository;
 
+import com.example.replate.service.FCMTokenService;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
@@ -9,15 +10,71 @@ import java.util.Map;
 public class UserRepository {
 
     private final FirebaseFirestore db;
+    private final FCMTokenService fcmTokenService;
 
     public UserRepository() {
         this.db = FirebaseFirestore.getInstance();
+        this.fcmTokenService = new FCMTokenService();
     }
-
     public UserRepository(FirebaseFirestore firestore) {
         this.db = firestore;
+        this.fcmTokenService = new FCMTokenService();
     }
 
+    public interface UserCreationCallback {
+        void onSuccess();
+        void onFailure(Exception e);
+    }
+
+    // Konstruktor dla testów - pozwala wstrzyknąć mock FCMTokenService
+    public UserRepository(FirebaseFirestore firestore, FCMTokenService fcmTokenService) {
+        this.db = firestore;
+        this.fcmTokenService = fcmTokenService;
+    }
+    public void createUser(String userId, String login, String email, UserCreationCallback callback) {
+        createUser(userId, login, email, null, callback);
+    }
+
+    public void createUser(String userId, String login, String email, String phone, UserCreationCallback callback) {
+        if (userId == null || userId.isEmpty()) {
+            callback.onFailure(new IllegalArgumentException("UserId is null or empty"));
+            return;
+        }
+
+        Map<String, Object> userData = new java.util.HashMap<>();
+        userData.put("login", login);
+        userData.put("email", email);
+        userData.put("phone", phone);
+        userData.put("parcelIds", new ArrayList<String>());
+        userData.put("likedUsers", new ArrayList<String>());
+        userData.put("rating", null);
+        userData.put("address", null);
+        userData.put("likedBy", new ArrayList<String>());
+        userData.put("orders", new ArrayList<String>());
+        userData.put("notificationsEnabled", true);
+
+        // Użyj FCMTokenService zamiast bezpośredniego wywołania FirebaseMessaging
+        fcmTokenService.getToken(new FCMTokenService.OnTokenReceivedListener() {
+            @Override
+            public void onSuccess(String token) {
+                userData.put("fcmToken", token);
+                saveUserData(userId, userData, callback);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                // Zapisz dane nawet jeśli token się nie powiódł
+                userData.put("fcmToken", null);
+                saveUserData(userId, userData, callback);
+            }
+        });
+    }
+    private void saveUserData(String userId, Map<String, Object> userData, UserCreationCallback callback) {
+        db.collection("users").document(userId)
+                .set(userData)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(callback::onFailure);
+    }
 
     public interface OnUserRatingLoadedListener {
         void onSuccess(Double rating);

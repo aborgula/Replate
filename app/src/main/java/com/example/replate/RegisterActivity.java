@@ -15,6 +15,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+
+import com.example.replate.repository.UserRepository;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -243,7 +245,7 @@ public class RegisterActivity extends AppCompatActivity {
 
             dialog.show();
         });
-
+/**
         registerbtn.setOnClickListener(v -> {
             String email = mail.getText().toString().trim();
             String pass = password.getText().toString().trim();
@@ -302,7 +304,49 @@ public class RegisterActivity extends AppCompatActivity {
                             Log.e("FirebaseAuth", "Register error", task.getException());
                         }
                     });
+        }); dotad**/
+
+        registerbtn.setOnClickListener(v -> {
+            String email = mail.getText().toString().trim();
+            String pass = password.getText().toString().trim();
+            String loginValue = login.getText().toString().trim();
+
+            if (email.isEmpty() || pass.isEmpty() || loginValue.isEmpty()) {
+                Toast.makeText(RegisterActivity.this, "Fill all fields", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            mAuth.createUserWithEmailAndPassword(email, pass)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            String userId = user.getUid();
+
+                            // 🔹 Użyj UserRepository
+                            UserRepository userRepository = new UserRepository();
+                            userRepository.createUser(userId, loginValue, email,
+                                    new UserRepository.UserCreationCallback() {
+                                        @Override
+                                        public void onSuccess() {
+                                            Toast.makeText(RegisterActivity.this, "Zarejestrowano i zapisano dane", Toast.LENGTH_SHORT).show();
+                                            Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
+                                            startActivity(intent);
+                                            finish();
+                                        }
+
+                                        @Override
+                                        public void onFailure(Exception e) {
+                                            Toast.makeText(RegisterActivity.this, "Błąd zapisu danych: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                        } else {
+                            Toast.makeText(RegisterActivity.this, task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                            Log.e("FirebaseAuth", "Register error", task.getException());
+                        }
+                    });
         });
+
+
 
         signinbtn.setOnClickListener(v -> {
             Animation slideDown = AnimationUtils.loadAnimation(this, R.anim.slide_down);
@@ -363,7 +407,25 @@ private void firebaseAuthWithGoogle(String idToken) {
                     // Sprawdź, czy dokument użytkownika istnieje
                     db.collection("users").document(userId).get()
                             .addOnSuccessListener(document -> {
+
                                 if (!document.exists()) {
+                                    // 🔹 Użyj UserRepository
+                                    UserRepository userRepository = new UserRepository();
+                                    userRepository.createUser(userId, user.getDisplayName(), user.getEmail(),
+                                            new UserRepository.UserCreationCallback() {
+                                                @Override
+                                                public void onSuccess() {
+                                                    startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
+                                                    finish();
+                                                }
+
+                                                @Override
+                                                public void onFailure(Exception e) {
+                                                    Toast.makeText(RegisterActivity.this, "Błąd zapisu danych: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                }
+                                            });
+                                }
+                                /**if (!document.exists()) {
                                     // Dokument nie istnieje → stwórz nowego użytkownika
                                     Map<String, Object> userData = new HashMap<>();
                                     userData.put("login", user.getDisplayName());
@@ -396,7 +458,7 @@ private void firebaseAuthWithGoogle(String idToken) {
                                                             });
                                                 }
                                             });
-                                } else {
+                                } **/else {
                                     // Dokument istnieje → po prostu startujemy HomeActivity
                                     startActivity(new Intent(this, HomeActivity.class));
                                     finish();
