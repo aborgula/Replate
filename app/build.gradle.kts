@@ -8,6 +8,8 @@ android {
     namespace = "com.example.replate"
     compileSdk = 35
 
+
+
     defaultConfig {
         applicationId = "com.example.replate"
         minSdk = 24
@@ -16,6 +18,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    testOptions {
+        unitTests.all {
+            it.useJUnitPlatform()
+        }
     }
 
     buildTypes {
@@ -115,12 +123,14 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.8.2")
 
     // TESTY
-    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.3.1")
     testImplementation("org.mockito:mockito-inline:5.2.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.11.0")
     testImplementation("org.robolectric:robolectric:4.11.1")
     testImplementation("com.google.firebase:firebase-firestore:24.10.0")
 
