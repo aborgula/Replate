@@ -1,18 +1,24 @@
 package com.example.replate.integration;
 
 import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.example.replate.repository.UserRepository;
 import com.example.replate.service.RatingService;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.*;
-import com.google.android.gms.tasks.*;
-import java.util.concurrent.*;
-import org.junit.*;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(MockitoJUnitRunner.class)
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
 public class RatingServiceUserRepositoryIntegrationTest {
 
     @Mock private FirebaseFirestore mockFirestore;
@@ -22,8 +28,8 @@ public class RatingServiceUserRepositoryIntegrationTest {
     private RatingService ratingService;
     private UserRepository userRepository;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         when(mockFirestore.collection("users")).thenReturn(mockUsersCollection);
         when(mockFirestore.collection("parcels")).thenReturn(mockParcelsCollection);
 
@@ -32,7 +38,7 @@ public class RatingServiceUserRepositoryIntegrationTest {
     }
 
     @Test
-    public void testGetParcelOwnerAndLoadUserData_Integration() throws InterruptedException {
+    void testGetParcelOwnerAndLoadUserData_Integration() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(2);
         final String[] ownerId = {null};
         final UserRepository.UserData[] userData = {null};
@@ -89,7 +95,7 @@ public class RatingServiceUserRepositoryIntegrationTest {
         doAnswer(inv -> {
             OnSuccessListener<DocumentSnapshot> listener = inv.getArgument(0);
             when(snapshot.exists()).thenReturn(true);
-            when(snapshot.getString(key)).thenReturn(value);
+            lenient().when(snapshot.getString(key)).thenReturn(value);
             listener.onSuccess(snapshot);
             return task;
         }).when(task).addOnSuccessListener(any());

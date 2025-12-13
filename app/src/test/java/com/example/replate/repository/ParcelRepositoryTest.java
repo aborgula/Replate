@@ -5,32 +5,38 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.*;
 
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
-public class ParcelRepositoryTest {
+@ExtendWith(MockitoExtension.class)
+class ParcelRepositoryTest {
 
-    @Test
-    public void getActiveParcels_Success_ReturnsList() {
+    @Mock private FirebaseFirestore db;
+    @Mock private CollectionReference col;
+    @Mock private Query query;
+    @Mock private Task<QuerySnapshot> task;
+    @Mock private QuerySnapshot snapshot;
 
-        // Arrange
-        MockitoAnnotations.openMocks(this);
+    @Mock private ParcelRepository.OnParcelsLoadedListener listener;
 
-        FirebaseFirestore db = mock(FirebaseFirestore.class);
-        CollectionReference col = mock(CollectionReference.class);
-        Query query = mock(Query.class);
-        Task<QuerySnapshot> task = mock(Task.class);
-        QuerySnapshot snapshot = mock(QuerySnapshot.class);
-
+    @BeforeEach
+    void setUp() {
         when(db.collection("parcels")).thenReturn(col);
         when(col.whereEqualTo("status", "active")).thenReturn(query);
         when(query.get()).thenReturn(task);
+    }
 
+    @Test
+    void getActiveParcels_Success_ReturnsList() {
+        // Arrange - mock dokumentów
         QueryDocumentSnapshot d1 = mock(QueryDocumentSnapshot.class);
         QueryDocumentSnapshot d2 = mock(QueryDocumentSnapshot.class);
 
@@ -50,22 +56,17 @@ public class ParcelRepositoryTest {
         when(task.addOnSuccessListener(captor.capture())).thenReturn(task);
         when(task.addOnFailureListener(any())).thenReturn(task);
 
-        ParcelRepository.OnParcelsLoadedListener listener =
-                mock(ParcelRepository.OnParcelsLoadedListener.class);
-
         ParcelRepository repo = new ParcelRepository(db);
-
 
         // Act
         repo.getActiveParcels(listener);
         captor.getValue().onSuccess(snapshot);
 
-
         // Assert
-        ArgumentCaptor<List<Parcel>> parcels = ArgumentCaptor.forClass(List.class);
-        verify(listener).onSuccess(parcels.capture());
+        ArgumentCaptor<List<Parcel>> parcelsCaptor = ArgumentCaptor.forClass(List.class);
+        verify(listener).onSuccess(parcelsCaptor.capture());
 
-        List<Parcel> result = parcels.getValue();
+        List<Parcel> result = parcelsCaptor.getValue();
 
         assertEquals(2, result.size());
         assertEquals("id1", result.get(0).getId());
